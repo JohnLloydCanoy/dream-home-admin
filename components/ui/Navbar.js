@@ -58,8 +58,8 @@ return (
             
             {/* LOGO SECTION */}
             <Link href="/dashboard" className="flex items-center gap-3 shrink-0">
-            <div className="bg-white p-1 rounded-md">
-                <img src="/DreamHomelogo.png" alt="DreamHome Logo" className="h-10 w-auto object-contain" />
+            <div className=" p-1 rounded-md">
+                <img src="/logo.png" alt="DreamHome Logo" className="h-10 w-auto object-contain" />
             </div>
             <div className="flex flex-col">
                 <span className="text-xl font-bold leading-tight tracking-tight">DreamHome</span>
