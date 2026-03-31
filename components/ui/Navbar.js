@@ -1,14 +1,51 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const ManagementNavBar = () => {
 const pathname = usePathname();
 const [activeDropdown, setActiveDropdown] = useState(null);
+const [adminUser, setAdminUser] = useState(null);
+const [isLoadingAdmin, setIsLoadingAdmin] = useState(true);
 
 const isActive = (path) => pathname === path;
+
+useEffect(() => {
+    let isMounted = true;
+
+    async function loadAdminUser() {
+        try {
+            const response = await fetch('/api/admin/me', { cache: 'no-store' });
+
+            if (!response.ok) {
+                throw new Error('Failed to load admin user');
+            }
+
+            const data = await response.json();
+
+            if (isMounted) {
+                setAdminUser(data.user ?? null);
+            }
+        } catch (error) {
+            console.error(error);
+            if (isMounted) {
+                setAdminUser(null);
+            }
+        } finally {
+            if (isMounted) {
+                setIsLoadingAdmin(false);
+            }
+        }
+    }
+
+    loadAdminUser();
+
+    return () => {
+        isMounted = false;
+    };
+}, []);
 
 
 const menuData = [
@@ -109,8 +146,12 @@ return (
             {/* STAFF ACTIONS */}
             <div className="flex items-center gap-4 shrink-0">
             <div className="hidden xl:flex flex-col items-end mr-2">
-                <span className="text-xs font-bold text-white">John White</span>
-                <span className="text-[10px] text-blue-300">Branch Manager (B85)</span>
+                <span className="text-xs font-bold text-white">
+                    {isLoadingAdmin ? 'Loading admin...' : (adminUser?.fullName ?? 'Unknown Admin')}
+                </span>
+                <span className="text-[10px] text-blue-300">
+                    {adminUser ? `${adminUser.role} (${adminUser.branchCode})` : 'No admin profile'}
+                </span>
             </div>
             <button className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2 rounded transition">
                 Sign Out
