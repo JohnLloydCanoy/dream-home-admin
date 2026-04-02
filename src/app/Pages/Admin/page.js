@@ -1,0 +1,1 @@
+import Navbar from "../../global-components/ui/Navbar";
