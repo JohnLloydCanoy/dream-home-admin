@@ -1,63 +1,48 @@
-import { Pool } from 'pg';
+function normalizeAdminUser(payload) {
+    const rawUser = payload?.user ?? payload;
 
-let pool;
-
-function getPool() {
-    if (pool) {
-        return pool;
-    }
-
-    if (!process.env.DATABASE_URL) {
+    if (!rawUser || typeof rawUser !== 'object') {
         return null;
     }
-
-    pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
-    });
-
-    return pool;
-}
-
-export async function getAdminUserById(userId) {
-    const db = getPool();
-
-    if (!db) {
-        return null;
-    }
-
-    const query = `
-    SELECT
-        id,
-        full_name,
-        role,
-        branch_code
-        FROM admin_users
-        WHERE id = $1
-        LIMIT 1
-    `;
-
-    const result = await db.query(query, [userId]);
-
-    if (!result.rows.length) {
-        return null;
-    }
-
-    const row = result.rows[0];
 
     return {
-        id: row.id,
-        fullName: row.full_name,
-        role: row.role,
-        branchCode: row.branch_code,
+        id: rawUser.id ?? null,
+        fullName: rawUser.fullName ?? rawUser.full_name ?? null,
+        role: rawUser.role ?? null,
+        branchCode: rawUser.branchCode ?? rawUser.branch_code ?? null,
     };
 }
 
-export async function getCurrentAdminUser() {
-    const adminUserId = process.env.ADMIN_USER_ID;
+export async function getCurrentAdminUser(request) {
+    const baseUrl = process.env.DJANGO_API_BASE_URL;
+    const endpointPath = process.env.DJANGO_ADMIN_ME_PATH ?? '/api/admin/me/';
 
-    if (!adminUserId) {
+    if (!baseUrl) {
+        throw new Error('DJANGO_API_BASE_URL is not configured');
+    }
+
+    const djangoUrl = `${baseUrl.replace(/\/$/, '')}${endpointPath.startsWith('/') ? endpointPath : `/${endpointPath}`}`;
+    const cookieHeader = request.headers.get('cookie');
+    const authHeader = request.headers.get('authorization');
+
+    const response = await fetch(djangoUrl, {
+        method: 'GET',
+        headers: {
+            ...(cookieHeader ? { cookie: cookieHeader } : {}),
+            ...(authHeader ? { authorization: authHeader } : {}),
+            accept: 'application/json',
+        },
+        cache: 'no-store',
+    });
+
+    if (response.status === 401 || response.status === 403 || response.status === 404) {
         return null;
     }
 
-    return getAdminUserById(adminUserId);
+    if (!response.ok) {
+        throw new Error(`Django user endpoint failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    return normalizeAdminUser(data);
 }

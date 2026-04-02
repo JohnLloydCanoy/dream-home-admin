@@ -51,7 +51,7 @@ useEffect(() => {
 const menuData = [
 {
     title: 'Branch & Staff',
-    href: '/management/staff',
+    href: '#',
     items: [
     'Staff Directory', 
     'Supervisor Groups', 
@@ -61,7 +61,7 @@ const menuData = [
 },
 {
     title: 'Properties',
-    href: '/management/properties',
+    href: '#',
     items: [
     'Manage Listings', 
     'Inspections', 
@@ -71,7 +71,7 @@ const menuData = [
 },
 {
     title: 'Renters',
-    href: '/management/renters',
+    href: '#',
     items: [
     'Prospective Renters',
     'Viewing Logs',
@@ -80,7 +80,7 @@ const menuData = [
 },
 {
     title: 'Leases',
-    href: '/management/leases',
+    href: '#',
     items: [
     'Active Agreements', 
     'Expiring Leases', 
