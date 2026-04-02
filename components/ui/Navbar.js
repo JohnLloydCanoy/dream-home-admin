@@ -53,38 +53,24 @@ const menuData = [
     title: 'Branch & Staff',
     href: '#',
     items: [
-    'Staff Directory', 
-    'Supervisor Groups', 
-    'Next-of-Kin Records', 
-    'Branch Offices'
     ]
 },
 {
     title: 'Properties',
     href: '#',
     items: [
-    'Manage Listings', 
-    'Inspections', 
-    'Advertising', 
-    'Owner Details' 
     ]
 },
 {
     title: 'Renters',
     href: '#',
     items: [
-    'Prospective Renters',
-    'Viewing Logs',
-    'Viewing Comments' 
     ]
 },
 {
     title: 'Leases',
     href: '#',
     items: [
-    'Active Agreements', 
-    'Expiring Leases', 
-    'Performance Tracking'
     ]
 }
 ];
