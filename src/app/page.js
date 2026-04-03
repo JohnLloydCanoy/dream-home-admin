@@ -43,7 +43,7 @@ export default function Home() {
             </h1>
           </div>
           <h2 className="text-[1.75rem] font-medium text-gray-800 leading-tight pr-4">
-            Manage properties, staff, and renters efficiently and securely.
+            Manage properties, and staff efficiently and securely.
           </h2>
         </div>
 
