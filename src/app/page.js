@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { loginAdmin } from "../lib/authService";
+import { loginAdmin, logoutAdmin } from "../lib/authService";
+import { jwtDecode } from "jwt-decode";
 
 export default function Home() {
   const router = useRouter();
@@ -25,15 +26,21 @@ export default function Home() {
     setError("");
 
     try {
-      // Call our centralized admin login service
       const result = await loginAdmin(credentials.staffId, credentials.password);
-      
-      // Redirect based on the role returned by the service
-      if (result.role === "ADMIN" || result.role === "STAFF") {
+      const userRole = result.role?.toUpperCase();
+
+      if (userRole === "ADMIN") {
         router.push("/Pages/Admin"); 
+      } 
+      else if (userRole === "STAFF") {
+        router.push("/Pages/Staff");
+      } 
+      else {
+        setError("Access Denied: Unauthorized portal.");
+        logoutAdmin(); 
       }
+
     } catch (err) {
-      // Display the specific error (e.g., "Access Denied" or "Invalid Credentials")
       setError(err.message);
     } finally {
       setIsLoading(false);
