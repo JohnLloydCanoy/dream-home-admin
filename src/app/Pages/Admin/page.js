@@ -1,12 +1,8 @@
 "use client";
 
-import ManagementNavBar from "./components/ui/Navbar";
-
 export default function AdminPage() {
     return (
         <div className="flex bg-[#f0f2f5] min-h-screen font-sans">
-            {/* Sidebar */}
-            <ManagementNavBar />
 
             {/* Main Content Area - offset by the sidebar width (w-64 = ml-64) */}
             <div className="ml-64 flex-1 p-8">
