@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import Button from '@/components/ui/Button';
+import Button from '../../../../../global-components/ui/Button';
 
 export default function BranchOverviewPage() {
     const [branches, setBranches] = useState([]);
@@ -35,9 +35,12 @@ export default function BranchOverviewPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-extrabold text-[#002147]">Branch Overview</h1>
-                <p className="text-gray-600 mt-1">Real-time data from the DreamHome database.</p>
+            <div className="flex justify-between items-center">
+                <div>
+                    <h1 className="text-3xl font-extrabold text-[#002147]">Branch Overview</h1>
+                    <p className="text-gray-600 mt-1">Real-time data from the DreamHome database.</p>
+                </div>
+                <Button variant="primary" size="md">Add Branch</Button>
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
