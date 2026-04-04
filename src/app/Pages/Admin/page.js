@@ -1,10 +1,10 @@
 "use client"
-import ManagementNavBar from "../../../../global-components/ui/Navbar";
+import ManagementNavBar from "./components/ui/Navbar";
 
-export default function AdminPage(){
+export default function AdminPage() {
     return (
         <div>
-            <ManagementNavBar />    
+            <ManagementNavBar />
         </div>
     )
 }
