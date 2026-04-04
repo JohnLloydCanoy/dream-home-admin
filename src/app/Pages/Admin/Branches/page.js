@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import Dialog from './Dialog';
+import Dialog from './AddBranchModal';
 import Button from '../../../../../global-components/ui/Button';
 
 export default function BranchOverviewPage() {
