@@ -1,5 +1,8 @@
-import Button from '../../../../../global-components/ui/Button';
-import Dialog from '../../../../../global-components/ui/Dialog';
+"use client";
+
+import React, { useState } from 'react';
+import Button from '../../../../../../global-components/ui/Button';
+import Dialog from '../../../../../../global-components/ui/Dialog';
 
 export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -12,7 +15,7 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
         fax_no: ''
     });
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL ;
 
     const handleInputChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
