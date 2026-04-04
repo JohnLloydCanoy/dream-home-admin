@@ -1,3 +1,5 @@
+import ManagementNavBar from "./components/ui/Navbar";
+
 export default function EnrollStaffPage() {
   return (
     <div>
