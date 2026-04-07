@@ -50,7 +50,6 @@ export default function StaffDirectoryPage() {
                         Manage and view all registered personnel for DreamHome.
                     </p>
                 </div>
-                {/* Optional: Add a button to enroll new staff if needed here */}
                 <Button variant="primary" size="md" onClick={() => setIsAddModalOpen(true)}>
                     + Add New Staff
                 </Button> 

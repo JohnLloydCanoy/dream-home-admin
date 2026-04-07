@@ -6,6 +6,7 @@ import Dialog from '@components/ui/Dialog';
 import apiClient from '@/lib/apiClient';
 import useForm from '@/hooks/useForm';
 import { validateForm, branchValidators } from './validator';
+import { BARANGAY_CHOICES } from './constants';
 
 export default function EditBranchModal({ isOpen, onClose, onSuccess, branch }) {
     const [submitError, setSubmitError] = useState('');
@@ -64,7 +65,12 @@ export default function EditBranchModal({ isOpen, onClose, onSuccess, branch }) 
 
                 <div className="space-y-1">
                     <label className="text-xs font-bold text-gray-700 uppercase">Area</label>
-                    <input type="text" name="area" value={formData.area} onChange={handleChange} className={`w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 ${errors.area ? 'border-red-400' : 'border-gray-300'}`} placeholder="Downtown (Optional)" />
+                    <select name="area" value={formData.area} onChange={handleChange} className={`w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white ${errors.area ? 'border-red-400' : 'border-gray-300'}`}>
+                        <option value="">— Select Area (Optional) —</option>
+                        {BARANGAY_CHOICES.map((b) => (
+                            <option key={b.value} value={b.value}>{b.label}</option>
+                        ))}
+                    </select>
                     <FieldError field="area" />
                 </div>
 
