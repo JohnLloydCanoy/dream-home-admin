@@ -5,6 +5,9 @@ import Button from '../../../../../../global-components/ui/Button';
 import Dialog from '../../../../../../global-components/ui/Dialog';
 
 export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
+
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
+    
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         street: '',
@@ -15,43 +18,51 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
         fax_no: ''
     });
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL ;
 
     const handleInputChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        setIsSubmitting(true);
+    e.preventDefault();
+    setIsSubmitting(true);
 
-        try {
-            const token = localStorage.getItem('adminAccessToken');
-            const response = await fetch(`${API_URL}/branches/`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            });
+    try {
+        const token = localStorage.getItem('adminAccessToken');
+        
+        console.log("ATTEMPTING POST TO URL:", `${API_URL}/branches/`);
 
-            if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(JSON.stringify(errData));
-            }
+        // Using the dynamic API_URL now!
+        const response = await fetch(`${API_URL}/branches/`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
 
-            // Reset form and notify parent to refresh the table
-            setFormData({ street: '', area: '', city: '', postcode: '', telephone_no: '', fax_no: '' });
-            onSuccess(); 
-
-        } catch (error) {
-            console.error("Submission Error:", error);
-            alert("Failed to add branch. Check console for details.");
-        } finally {
-            setIsSubmitting(false);
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            throw new Error(`Server returned non-JSON response. Check your API_URL.`);
         }
-    };
+
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(JSON.stringify(errData));
+        }
+
+        // Success!
+        setFormData({ street: '', area: '', city: '', postcode: '', telephone_no: '', fax_no: '' });
+        onSuccess(); 
+
+    } catch (error) {
+        console.error("Submission Error:", error);
+        alert(`Error: ${error.message}`);
+    } finally {
+        setIsSubmitting(false);
+    }
+};
 
     return (
         <Dialog 
