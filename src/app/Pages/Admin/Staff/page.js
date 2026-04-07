@@ -1,42 +1,68 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import apiClient from '@/lib/apiClient'; 
 import Button from '@components/ui/Button';
+import AddStaffModal from './components/AddStaffModal';
+import EditStaffModal from './components/EditStaffModal';
+import DeleteStaffModal from './components/DeleteStaffModal';
 
 export default function StaffDirectoryPage() {
     const [staffList, setStaffList] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    useEffect(() => {
-        let isMounted = true;
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [selectedStaff, setSelectedStaff] = useState(null);
 
-        async function fetchStaff() {
-            try {
-
-                const data = await apiClient('/users/staff/');
-                if (isMounted) {
-                    setStaffList(data.results || data);
-                }
-            } catch (err) {
-                console.error('Failed to fetch staff directory:', err);
-                if (isMounted) {
-                    setError('Failed to load the staff directory. Please try again later.');
-                }
-            } finally {
-                if (isMounted) {
-                    setIsLoading(false);
-                }
-            }
+    const fetchStaff = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const data = await apiClient('/users/staff/');
+            setStaffList(data.results || data);
+        } catch (err) {
+            console.error('Failed to fetch staff directory:', err);
+            setError('Failed to load the staff directory. Please try again later.');
+        } finally {
+            setIsLoading(false);
         }
-
-        fetchStaff();
-
-        return () => {
-            isMounted = false;
-        };
     }, []);
+
+    useEffect(() => {
+        fetchStaff();
+    }, [fetchStaff]);
+
+    const handleAddSuccess = () => {
+        setIsAddModalOpen(false);
+        fetchStaff();
+    };
+
+    const handleEditClick = (staff) => {
+        setSelectedStaff(staff);
+        setIsEditModalOpen(true);
+    };
+
+    const handleEditSuccess = () => {
+        setIsEditModalOpen(false);
+        setSelectedStaff(null);
+        fetchStaff();
+    };
+
+    const handleDeleteClick = (staff) => {
+        setSelectedStaff(staff);
+        setIsDeleteModalOpen(true);
+    };
+
+    const handleDeleteSuccess = () => {
+        setIsDeleteModalOpen(false);
+        setSelectedStaff(null);
+        fetchStaff();
+    };
+
+
 
     return (
         <div className="space-y-6">
@@ -89,7 +115,8 @@ export default function StaffDirectoryPage() {
                                     <th className="p-4">Position</th>
                                     <th className="p-4">Email / Phone</th>
                                     <th className="p-4">Branch</th>
-                                    <th className="p-4 pr-6 text-right">Joined</th>
+                                    <th className="p-4">Joined</th>
+                                    <th className="p-4 pr-6 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -119,8 +146,33 @@ export default function StaffDirectoryPage() {
                                             {/* Assuming the API returns a branch name or object. Adjust if it returns just an ID */}
                                             {typeof staff.branch === 'object' ? staff.branch?.name : staff.branch || 'Unassigned'}
                                         </td>
-                                        <td className="p-4 pr-6 text-right text-sm text-gray-500">
+                                        <td className="p-4 text-sm text-gray-500">
                                             {new Date(staff.date_joined).toLocaleDateString()}
+                                        </td>
+                                        <td className="p-4 pr-6">
+                                            <div className="flex justify-end gap-2">
+                                                {/* Edit Button */}
+                                                <button
+                                                    onClick={() => handleEditClick(staff)}
+                                                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                    title="Edit staff"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                    </svg>
+                                                </button>
+
+                                                {/* Delete Button */}
+                                                <button
+                                                    onClick={() => handleDeleteClick(staff)}
+                                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                    title="Delete staff"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -129,6 +181,30 @@ export default function StaffDirectoryPage() {
                     </div>
                 )}
             </div>
+
+            <AddStaffModal 
+                isOpen={isAddModalOpen} 
+                onClose={() => setIsAddModalOpen(false)} 
+                onSuccess={handleAddSuccess}
+            />
+
+            {selectedStaff && (
+                <>
+                    <EditStaffModal
+                        isOpen={isEditModalOpen}
+                        onClose={() => { setIsEditModalOpen(false); setSelectedStaff(null); }}
+                        onSuccess={handleEditSuccess}
+                        staff={selectedStaff}
+                    />
+
+                    <DeleteStaffModal
+                        isOpen={isDeleteModalOpen}
+                        onClose={() => { setIsDeleteModalOpen(false); setSelectedStaff(null); }}
+                        onSuccess={handleDeleteSuccess}
+                        staff={selectedStaff}
+                    />
+                </>
+            )}
         </div>
     );
 }
