@@ -17,30 +17,8 @@ const ManagementSideBar = () => {
         let isMounted = true;
 
         async function loadAdminUser() {
-            const token = localStorage.getItem('adminAccessToken');
-            const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
-
-            if (!token) {
-                setIsLoadingAdmin(false);
-                return;
-            }
-
             try {
-                const response = await fetch(`${API_BASE_URL}/users/me/`, { 
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                    cache: 'no-store' 
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to load admin profile');
-                }
-
-                const data = await response.json();
-
+                const data = await apiClient('/users/me/')
                 if (isMounted) {
                     setAdminUser(data.user ?? data); 
                 }
