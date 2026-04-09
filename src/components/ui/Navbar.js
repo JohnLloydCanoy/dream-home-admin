@@ -122,7 +122,7 @@ const ManagementSideBar = () => {
     ];
 
     return (
-        <aside className="w-72 h-screen fixed top-0 left-0 bg-[#002147] text-white border-r border-blue-900 shadow-xl flex flex-col font-sans z-50">
+        <aside className="w-64 h-screen fixed top-0 left-0 bg-[#002147] text-white border-r border-blue-900 shadow-xl flex flex-col font-sans z-50">
             
             {/* LOGO SECTION */}
             <div className="p-6 border-b border-blue-900 flex items-center gap-3 shrink-0">
