@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import Button from '@components/ui/Button';
+import Button from '../../../../../global-components/ui/Button';
 import apiClient from '@/lib/apiClient';
 import AddBranchModal from '../../../../hooks/editHooks/AddBranchModal';
 import EditBranchModal from '../../../../hooks/editHooks/EditBranchModal';
