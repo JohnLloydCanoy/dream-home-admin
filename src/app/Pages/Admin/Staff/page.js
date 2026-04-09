@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import apiClient from '@/lib/apiClient'; 
-import Button from '@components/ui/Button';
+import apiClient from '@/lib/apiClient';
+import Button from '../../../../../global-components/ui/Button';
 import AddStaffModal from '../../../../components/components1/AddStaffModal';
 import EditStaffModal from '../../../../components/components1/EditStaffModal';
 import DeleteStaffModal from '../../../../components/components1/DeleteStaffModal';
@@ -78,7 +78,7 @@ export default function StaffDirectoryPage() {
                 </div>
                 <Button variant="primary" size="md" onClick={() => setIsAddModalOpen(true)}>
                     + Add New Staff
-                </Button> 
+                </Button>
             </div>
 
             {/* Content Area */}
@@ -182,9 +182,9 @@ export default function StaffDirectoryPage() {
                 )}
             </div>
 
-            <AddStaffModal 
-                isOpen={isAddModalOpen} 
-                onClose={() => setIsAddModalOpen(false)} 
+            <AddStaffModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
                 onSuccess={handleAddSuccess}
             />
 
