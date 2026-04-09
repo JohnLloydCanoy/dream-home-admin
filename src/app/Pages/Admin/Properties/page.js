@@ -1,31 +1,93 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import DataTable from '@/components/ui/DataTable'; // Adjust import path as needed
 
 export default function PropertiesPage() {
+    // 1. Setup State
+    const [properties, setProperties] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // 2. Fetch Dummy Data (Replace with your Django API later)
+    useEffect(() => {
+        setTimeout(() => {
+            setProperties([
+                { property_no: 'PG4', type: 'Flat', rent: 600, status: 'Available', city: 'Glasgow' },
+                { property_no: 'PG16', type: 'House', rent: 850, status: 'Rented', city: 'Glasgow' },
+                { property_no: 'PL94', type: 'Flat', rent: 400, status: 'Reserved', city: 'London' }
+            ]);
+            setIsLoading(false);
+        }, 1000);
+    }, []);
+
+    // 3. Define the Columns Configuration
+    const tableColumns = [
+        { key: 'property_no', label: 'Property ID' },
+        { key: 'city', label: 'Location' },
+        { key: 'type', label: 'Type' },
+        { 
+            key: 'rent', 
+            label: 'Monthly Rent',
+            // Custom render to add the currency symbol
+            render: (value) => <span className="font-medium text-gray-900">£{value}</span> 
+        },
+        { 
+            key: 'status', 
+            label: 'Status',
+            // Custom render to create dynamic colored badges!
+            render: (value) => {
+                const colors = {
+                    'Available': 'bg-green-100 text-green-800',
+                    'Rented': 'bg-blue-100 text-blue-800',
+                    'Reserved': 'bg-orange-100 text-orange-800'
+                };
+                return (
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${colors[value] || 'bg-gray-100 text-gray-800'}`}>
+                        {value}
+                    </span>
+                );
+            }
+        }
+    ];
+
+    // 4. Define custom actions (Edit / Delete buttons)
+    const renderActions = (row) => (
+        <div className="flex justify-end gap-3">
+            <button 
+                onClick={(e) => { e.stopPropagation(); alert(`Edit ${row.property_no}`); }} 
+                className="text-blue-600 hover:text-blue-900 text-sm font-semibold"
+            >
+                Edit
+            </button>
+            <button 
+                onClick={(e) => { e.stopPropagation(); alert(`Delete ${row.property_no}`); }} 
+                className="text-red-600 hover:text-red-900 text-sm font-semibold"
+            >
+                Delete
+            </button>
+        </div>
+    );
+
     return (
-        <div className="p-8 w-full">
-            
-            {/* --- 1. CHANGE TITLE AND DESCRIPTION HERE --- */}
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900">Properties</h1>
-                <p className="text-sm text-gray-500 mt-1">Manage and view details for Properties.</p>
-            </div>
-
-            {/* --- Placeholder Content Card --- */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center flex flex-col items-center justify-center min-h-[400px]">
-                
-                {/* Construction Icon */}
-                <div className="bg-blue-50 p-4 rounded-full mb-4">
-                    <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                    </svg>
+        <div className="w-full">
+            <div className="mb-8 flex justify-between items-end">
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Property Listings</h1>
+                    <p className="text-sm text-gray-500 mt-1">Manage all active and inactive properties.</p>
                 </div>
-                
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Under Development</h3>
-                <p className="text-gray-500 max-w-md mx-auto">
-                    This section of the DreamHome Admin Portal is currently being built. Future components, tables, and logic will be implemented here.
-                </p>
+                <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">
+                    + Add Property
+                </button>
             </div>
 
+            {/* 🌟 Just plug the component in! */}
+            <DataTable 
+                columns={tableColumns} 
+                data={properties} 
+                keyField="property_no"
+                isLoading={isLoading}
+                actions={renderActions}
+            />
         </div>
     );
 }
