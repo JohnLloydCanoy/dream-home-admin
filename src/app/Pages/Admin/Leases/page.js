@@ -1,31 +1,95 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import DataTable from '@/components/ui/DataTable';
+import apiClient from '@/lib/apiClient'; 
 
 export default function LeasesPage() {
-    return (
-        <div className="p-8 w-full">
-            
-            {/* --- 1. CHANGE TITLE AND DESCRIPTION HERE --- */}
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900">Leases</h1>
-                <p className="text-sm text-gray-500 mt-1">Manage and view details for Leases.</p>
-            </div>
+    const [leases, setLeases] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-            {/* --- Placeholder Content Card --- */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center flex flex-col items-center justify-center min-h-[400px]">
-                
-                {/* Construction Icon */}
-                <div className="bg-blue-50 p-4 rounded-full mb-4">
-                    <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                    </svg>
+    useEffect(() => {
+        let isMounted = true;
+
+        const fetchLeases = async () => {
+            try {
+                const data = await apiClient('/leases/'); 
+                if (isMounted) {
+                    setLeases(data.items || data); 
+                }
+            } catch (error) {
+                console.error("Failed to load leases:", error);
+            } finally {
+                if (isMounted) setIsLoading(false);
+            }
+        };
+
+        fetchLeases();
+        return () => { isMounted = false; };
+    }, []);
+
+    const tableColumns = [
+        { 
+            key: 'lease_no', 
+            label: 'Lease No.',
+            render: (value) => <span className="font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">{value}</span> 
+        },
+        { key: 'property_id', label: 'Property' },
+        { key: 'renter_name', label: 'Renter' },
+        { 
+            key: 'duration', 
+            label: 'Duration',
+            render: (value) => `${value} Months`
+        },
+        { 
+            key: 'monthly_rent', 
+            label: 'Monthly Rent',
+            render: (value) => <span className="font-medium">£{value}</span> 
+        },
+        { 
+            key: 'deposit_paid', 
+            label: 'Deposit Status',
+            // Dynamic badge based on the boolean value!
+            render: (value) => (
+                <span className={`px-3 py-1 rounded-full text-xs font-bold ${value ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    {value ? 'Paid' : 'Pending'}
+                </span>
+            )
+        }
+    ];
+
+    const renderActions = (row) => (
+        <div className="flex justify-end gap-3">
+            <button className="text-blue-600 hover:text-blue-900 text-sm font-semibold transition-colors">
+                View Contract
+            </button>
+        </div>
+    );
+
+    return (
+        <div className="w-full max-w-7xl mx-auto">
+            <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Lease Agreements</h1>
+                    <p className="text-sm text-gray-500 mt-1">Manage active, pending, and expired lease contracts.</p>
                 </div>
                 
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Under Development</h3>
-                <p className="text-gray-500 max-w-md mx-auto">
-                    This section of the DreamHome Admin Portal is currently being built. Future components, tables, and logic will be implemented here.
-                </p>
+                <button className="bg-[#002147] hover:bg-blue-900 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors shadow-sm flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Create Lease
+                </button>
             </div>
 
+            <DataTable 
+                columns={tableColumns} 
+                data={leases} 
+                keyField="lease_no"
+                isLoading={isLoading}
+                actions={renderActions}
+                emptyMessage="No lease agreements found."
+            />
         </div>
     );
 }
