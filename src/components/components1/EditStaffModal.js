@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import Button from '@components/ui/Button';
-import Dialog from '@components/ui/Dialog';
+import Button from '../../../global-components/ui/Button';
+import Dialog from '../../../global-components/ui/Dialog';
 import apiClient from '@/lib/apiClient';
 import useForm from '@/hooks/useForm';
 import { validateForm, staffValidators } from './validator';
