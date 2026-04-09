@@ -1,42 +1,45 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Button from '@components/ui/Button';
 import Dialog from '@components/ui/Dialog';
 import apiClient from '@/lib/apiClient';
 import useForm from '@/hooks/useForm';
-import { validateForm, branchValidators } from './validator';
-import { BARANGAY_CHOICES } from './constants';
+import { validateForm, branchValidators } from '../../lib/validator';
+import { BARANGAY_CHOICES } from '../../components/constants';
 
-// Extracted so it's defined once — no duplication between initial state & reset
-const INITIAL_BRANCH_DATA = {
-    street: '',
-    area: '',
-    city: '',
-    postcode: '',
-    telephone_no: '',
-    fax_no: '',
-};
-
-export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
+export default function EditBranchModal({ isOpen, onClose, onSuccess, branch }) {
     const [submitError, setSubmitError] = useState('');
 
-    const { formData, errors, isSubmitting, handleChange, handleSubmit } = useForm({
-        initialData: INITIAL_BRANCH_DATA,
+    const { formData, errors, isSubmitting, handleChange, handleSubmit, reset } = useForm({
+        initialData: {
+            street: branch?.street || '',
+            area: branch?.area || '',
+            city: branch?.city || '',
+            postcode: branch?.postcode || '',
+            telephone_no: branch?.telephone_no || '',
+            fax_no: branch?.fax_no || '',
+        },
         validateFn: (data) => validateForm(data, branchValidators),
         onSubmit: async (data) => {
             setSubmitError('');
             try {
-                await apiClient('/branches/', { method: 'POST', body: data });
+                await apiClient(`/branches/${branch.branch_no}/`, { method: 'PUT', body: data });
                 onSuccess();
             } catch (error) {
                 setSubmitError(error.message);
-                throw error; // re-throw so useForm doesn't reset the form
+                throw error;
             }
         },
     });
 
-    // Helper: renders a red error message below a field
+    // Sync form data when a different branch is selected
+    useEffect(() => {
+        if (branch && isOpen) {
+            reset();
+        }
+    }, [branch?.branch_no, isOpen]);
+
     const FieldError = ({ field }) =>
         errors[field] ? <p className="text-red-500 text-xs mt-1">{errors[field]}</p> : null;
 
@@ -44,11 +47,10 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
         <Dialog
             isOpen={isOpen}
             onClose={onClose}
-            title="Register New Branch"
+            title={`Edit Branch ${branch?.branch_no || ''}`}
         >
             <form onSubmit={handleSubmit} className="space-y-4">
 
-                {/* Top-level API error banner */}
                 {submitError && (
                     <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">
                         {submitError}
@@ -64,7 +66,7 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
                 <div className="space-y-1">
                     <label className="text-xs font-bold text-gray-700 uppercase">Area</label>
                     <select name="area" value={formData.area} onChange={handleChange} className={`w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white ${errors.area ? 'border-red-400' : 'border-gray-300'}`}>
-                        <option value="">— Select Barangay (Optional) —</option>
+                        <option value="">— Select Area (Optional) —</option>
                         {BARANGAY_CHOICES.map((b) => (
                             <option key={b.value} value={b.value}>{b.label}</option>
                         ))}
@@ -75,7 +77,7 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                         <label className="text-xs font-bold text-gray-700 uppercase">City <span className="text-red-500">*</span></label>
-                        <input type="text" name="city" value={formData.city} onChange={handleChange} className={`w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 ${errors.city ? 'border-red-400' : 'border-gray-300'}`} placeholder="London" />
+                        <input type="text" name="city" value={formData.city} onChange={handleChange} className={`w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 ${errors.city ? 'border-red-400' : 'border-gray-300'}`} placeholder="Manila" />
                         <FieldError field="city" />
                     </div>
                     <div className="space-y-1">
@@ -88,7 +90,7 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
                 <div className="grid grid-cols-2 gap-4 pb-4 border-b border-gray-100">
                     <div className="space-y-1">
                         <label className="text-xs font-bold text-gray-700 uppercase">Telephone <span className="text-red-500">*</span></label>
-                        <input type="text" name="telephone_no" value={formData.telephone_no} onChange={handleChange} className={`w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 ${errors.telephone_no ? 'border-red-400' : 'border-gray-300'}`} placeholder="+44 20..." />
+                        <input type="text" name="telephone_no" value={formData.telephone_no} onChange={handleChange} className={`w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 ${errors.telephone_no ? 'border-red-400' : 'border-gray-300'}`} placeholder="+63 2..." />
                         <FieldError field="telephone_no" />
                     </div>
                     <div className="space-y-1">
@@ -104,7 +106,7 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
                         Cancel
                     </Button>
                     <Button type="submit" variant="primary" isLoading={isSubmitting}>
-                        Save Branch
+                        Update Branch
                     </Button>
                 </div>
             </form>
