@@ -3,9 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import Button from '@components/ui/Button';
 import apiClient from '@/lib/apiClient';
-import AddBranchModal from '../../../../components/AddBranchModal';
-import EditBranchModal from '../../../../components/EditBranchModal';
-import DeleteBranchModal from '../../../../components/DeleteBranchModal';
+import AddBranchModal from '../../../../hooks/editHooks/AddBranchModal';
+import EditBranchModal from '../../../../hooks/editHooks/EditBranchModal';
+import DeleteBranchModal from '../../../../hooks/editHooks/DeleteBranchModal';
 
 export default function BranchOverviewPage() {
     const [branches, setBranches] = useState([]);
@@ -69,7 +69,7 @@ export default function BranchOverviewPage() {
                     <h1 className="text-3xl font-extrabold text-[#002147]">Branch Overview</h1>
                     <p className="text-gray-600 mt-1">Real-time data from the DreamHome database.</p>
                 </div>
-                
+
                 <Button variant="primary" size="md" onClick={() => setIsAddModalOpen(true)}>
                     + Add Branch
                 </Button>
@@ -141,9 +141,9 @@ export default function BranchOverviewPage() {
             </div>
 
             {/* ── Modals ──────────────────────────────────────────────────── */}
-            <AddBranchModal 
-                isOpen={isAddModalOpen} 
-                onClose={() => setIsAddModalOpen(false)} 
+            <AddBranchModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
                 onSuccess={handleAddSuccess}
             />
 
