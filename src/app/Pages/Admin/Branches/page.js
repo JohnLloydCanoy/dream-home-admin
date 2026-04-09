@@ -3,9 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import Button from '@components/ui/Button';
 import apiClient from '@/lib/apiClient';
-import AddBranchModal from './components/AddBranchModal';
-import EditBranchModal from './components/EditBranchModal';
-import DeleteBranchModal from './components/DeleteBranchModal';
+import AddBranchModal from '../../../../components/AddBranchModal';
+import EditBranchModal from '../../../../components/EditBranchModal';
+import DeleteBranchModal from '../../../../components/DeleteBranchModal';
 
 export default function BranchOverviewPage() {
     const [branches, setBranches] = useState([]);
