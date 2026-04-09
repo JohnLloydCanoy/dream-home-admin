@@ -3,9 +3,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import apiClient from '@/lib/apiClient'; 
 import Button from '@components/ui/Button';
-import AddStaffModal from './components/AddStaffModal';
-import EditStaffModal from './components/EditStaffModal';
-import DeleteStaffModal from './components/DeleteStaffModal';
+import AddStaffModal from '../../../../components/components1/AddStaffModal';
+import EditStaffModal from '../../../../components/components1/EditStaffModal';
+import DeleteStaffModal from '../../../../components/components1/DeleteStaffModal';
 
 export default function StaffDirectoryPage() {
     const [staffList, setStaffList] = useState([]);
