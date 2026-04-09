@@ -1,4 +1,4 @@
-import ManagementSideBar from "./components/ui/Navbar";
+import ManagementSideBar from "@/components/ui/Navbar";
 
 export default function AdminLayout({ children }) {
   return (
