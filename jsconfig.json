@@ -1,8 +1,12 @@
 {
   "compilerOptions": {
     "paths": {
-      "@/*": ["./src/*"],
-      "@components/*": ["./global-components/*"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@components/*": [
+        "./global-components/*"
+      ]
     }
   }
 }
