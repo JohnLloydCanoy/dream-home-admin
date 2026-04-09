@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import Button from '@components/ui/Button';
-import Dialog from '@components/ui/Dialog';
+import Button from '../../../global-components/ui/Button';
+import Dialog from '../../../global-components/ui/Dialog';
 import apiClient from '@/lib/apiClient';
 import useForm from '@/hooks/useForm';
 import { validateForm, staffValidators } from './validator';
@@ -81,7 +81,7 @@ export default function AddStaffModal({ isOpen, onClose, onSuccess }) {
                         {submitError}
                     </div>
                 )}
-                
+
                 <div className="bg-blue-50 text-blue-800 text-xs p-2 rounded-lg mb-4">
                     <strong>Note:</strong> A user account will automatically be created for this staff member.
                     The default password is <strong>dreamhome2026</strong>.
