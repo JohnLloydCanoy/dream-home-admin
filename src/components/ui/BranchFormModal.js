@@ -3,22 +3,21 @@
 import React, { useState, useEffect } from 'react';
 import Button from '@components/ui/Button'; 
 import Dialog from '@components/ui/Dialog';
+import FormField from '@/components/ui/FormField'; 
 import apiClient from '@/lib/apiClient';
 import { useForm } from '@/hooks/useForm';
 import { useCreate, useUpdate } from '@/hooks/useCrud';
-import { validateForm, branchValidators } from '@/lib/validator'; 
+import { branchValidators } from '@/lib/validator'; 
 
 export default function BranchFormModal({ isOpen, onClose, onSuccess, branchToEdit }) {
     const isEditMode = Boolean(branchToEdit);
     const [staffList, setStaffList] = useState([]);
-
 
     const { createRecord, isLoading: isCreating, error: createError } = useCreate('/branches/');
     const { updateRecord, isLoading: isUpdating, error: updateError } = useUpdate('/branches');
 
     const isSaving = isCreating || isUpdating;
     const submitError = isEditMode ? updateError : createError;
-
 
     useEffect(() => {
         if (isOpen) {
@@ -50,12 +49,9 @@ export default function BranchFormModal({ isOpen, onClose, onSuccess, branchToEd
         if (!payload.manager) payload.manager = null;
         if (!payload.fax_no) payload.fax_no = null;
 
-        let result;
-        if (isEditMode) {
-            result = await updateRecord(branchToEdit.branch_no, payload);
-        } else {
-            result = await createRecord(payload);
-        }
+        const result = isEditMode 
+            ? await updateRecord(branchToEdit.branch_no, payload)
+            : await createRecord(payload);
 
         if (result.success) {
             onSuccess();
@@ -63,80 +59,129 @@ export default function BranchFormModal({ isOpen, onClose, onSuccess, branchToEd
         }
     };
 
-    const FieldError = ({ field }) => errors[field] ? <p className="text-red-500 text-xs mt-1">{errors[field]}</p> : null;
-
     return (
         <Dialog 
             isOpen={isOpen} 
             onClose={onClose} 
             title={isEditMode ? `Edit Branch ${branchToEdit.branch_no}` : "Add New Branch"}
         >
-            <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto px-1">
+            <form onSubmit={handleSubmit} className="space-y-8 max-h-[75vh] overflow-y-auto px-2 pt-2 pb-6 custom-scrollbar">
+                
                 {submitError && (
-                    <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 sticky top-0 z-10">
+                    <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 sticky top-0 z-10 animate-in fade-in zoom-in duration-200">
                         {submitError}
                     </div>
                 )}
 
-                <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-700 uppercase">Street Address *</label>
-                    <input type="text" value={formData.street} onChange={(e) => handleChange('street', e.target.value)} className={`w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 ${errors.street ? 'border-red-400' : 'border-gray-300'}`} placeholder="C.M. Recto Avenue" />
-                    <FieldError field="street" />
-                </div>
+                {/* --- SECTION 1: LOCATION DETAILS --- */}
+                <section>
+                    <h3 className="text-sm font-bold text-[#002147] border-b pb-2 mb-4 flex items-center gap-2">
+                        <span className="bg-[#002147] text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px]">1</span>
+                        Location Details
+                    </h3>
+                    
+                    <div className="space-y-5">
+                        <FormField 
+                            label="Street Address" 
+                            field="street" 
+                            value={formData.street} 
+                            onChange={handleChange} 
+                            error={errors.street} 
+                            placeholder="e.g. C.M. Recto Avenue"
+                        />
 
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-700 uppercase">Barangay / Area *</label>
-                        <select value={formData.area} onChange={(e) => handleChange('area', e.target.value)} className={`w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white ${errors.area ? 'border-red-400' : 'border-gray-300'}`}>
-                            <option value="">— Select Area —</option>
-                            <option value="Carmen">Carmen</option>
-                            <option value="Lapasan">Lapasan</option>
-                            <option value="Macasandig">Macasandig</option>
-                            <option value="Poblacion">Poblacion</option>
-                            <option value="Lumbia">Lumbia</option>
-                        </select>
-                        <FieldError field="area" />
-                    </div>
-                    <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-700 uppercase">City *</label>
-                        <input type="text" value={formData.city} onChange={(e) => handleChange('city', e.target.value)} className={`w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 ${errors.city ? 'border-red-400' : 'border-gray-300'}`} placeholder="Cagayan de Oro" />
-                        <FieldError field="city" />
-                    </div>
-                </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField 
+                                label="Barangay / Area" 
+                                field="area" 
+                                type="select"
+                                value={formData.area} 
+                                onChange={handleChange} 
+                                error={errors.area}
+                            >
+                                <option value="">— Select Area —</option>
+                                <option value="Carmen">Carmen</option>
+                                <option value="Lapasan">Lapasan</option>
+                                <option value="Macasandig">Macasandig</option>
+                                <option value="Poblacion">Poblacion</option>
+                                <option value="Lumbia">Lumbia</option>
+                            </FormField>
 
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-700 uppercase">Postcode *</label>
-                        <input type="text" value={formData.postcode} onChange={(e) => handleChange('postcode', e.target.value)} className={`w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 ${errors.postcode ? 'border-red-400' : 'border-gray-300'}`} placeholder="9000" />
-                        <FieldError field="postcode" />
-                    </div>
-                    <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-700 uppercase">Telephone No. *</label>
-                        <input type="text" value={formData.telephone_no} onChange={(e) => handleChange('telephone_no', e.target.value)} className={`w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 ${errors.telephone_no ? 'border-red-400' : 'border-gray-300'}`} />
-                        <FieldError field="telephone_no" />
-                    </div>
-                </div>
+                            <FormField 
+                                label="City" 
+                                field="city" 
+                                value={formData.city} 
+                                onChange={handleChange} 
+                                error={errors.city} 
+                                placeholder="Cagayan de Oro"
+                            />
+                        </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-700 uppercase">Fax No.</label>
-                        <input type="text" value={formData.fax_no} onChange={(e) => handleChange('fax_no', e.target.value)} className="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
+                        <FormField 
+                            label="Postcode" 
+                            field="postcode" 
+                            value={formData.postcode} 
+                            onChange={handleChange} 
+                            error={errors.postcode} 
+                            placeholder="9000"
+                            className="w-1/2"
+                        />
                     </div>
-                    <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-700 uppercase">Branch Manager</label>
-                        <select value={formData.manager} onChange={(e) => handleChange('manager', e.target.value)} className="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                </section>
+
+                {/* --- SECTION 2: CONTACT & MANAGEMENT --- */}
+                <section>
+                    <h3 className="text-sm font-bold text-[#002147] border-b pb-2 mb-4 flex items-center gap-2">
+                        <span className="bg-[#002147] text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px]">2</span>
+                        Contact & Management
+                    </h3>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField 
+                            label="Telephone No." 
+                            field="telephone_no" 
+                            value={formData.telephone_no} 
+                            onChange={handleChange} 
+                            error={errors.telephone_no} 
+                            placeholder="09..."
+                        />
+                        <FormField 
+                            label="Fax No." 
+                            field="fax_no" 
+                            value={formData.fax_no} 
+                            onChange={handleChange} 
+                            required={false}
+                            placeholder="Optional"
+                        />
+                    </div>
+
+                    <div className="mt-5 bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+                        <FormField 
+                            label="Branch Manager" 
+                            field="manager" 
+                            type="select"
+                            value={formData.manager} 
+                            onChange={handleChange}
+                            required={false}
+                            labelClass="text-blue-900"
+                        >
                             <option value="">— Unassigned —</option>
                             {staffList.map(s => (
-                                <option key={s.staff_no} value={s.staff_no}>{s.first_name} {s.last_name} ({s.staff_no})</option>
+                                <option key={s.staff_no} value={s.staff_no}>
+                                    {s.first_name} {s.last_name} ({s.staff_no})
+                                </option>
                             ))}
-                        </select>
+                        </FormField>
                     </div>
-                </div>
+                </section>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                    <Button variant="ghost" onClick={onClose} type="button" disabled={isSaving}>Cancel</Button>
+                {/* --- ACTIONS --- */}
+                <div className="flex justify-end gap-3 pt-6 border-t border-gray-100 mt-4">
+                    <Button variant="ghost" onClick={onClose} type="button" disabled={isSaving}>
+                        Cancel
+                    </Button>
                     <Button type="submit" variant="primary" isLoading={isSaving}>
-                        {isEditMode ? "Update Branch" : "Save New Branch"}
+                        {isEditMode ? "Update Branch" : "Save Branch"}
                     </Button>
                 </div>
             </form>
