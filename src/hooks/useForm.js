@@ -1,52 +1,37 @@
+'use client';
+
 import { useState } from 'react';
+import { validateForm } from '@/lib/validator'; 
 
-/**
- * Generic form hook with built-in validation.
- * @param {Object}   initialData  - Default form field values
- * @param {Function} validateFn   - (formData) => errorsObject  (optional)
- * @param {Function} onSubmit     - async (formData) => void
- */
-export default function useForm({ initialData, validateFn, onSubmit }) {
-    const [formData, setFormData] = useState(initialData);
+export function useForm(initialState = {}, validators) {
+    // initialState is passed directly from the modal, so formData is never undefined
+    const [formData, setFormData] = useState(initialState);
     const [errors, setErrors] = useState({});
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-        // Clear the field error when the user edits it
-        if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        // Run validation if a validate function was provided
-        if (validateFn) {
-            const validationErrors = validateFn(formData);
-            if (Object.keys(validationErrors).length > 0) {
-                setErrors(validationErrors);
-                return;
-            }
-        }
-
-        setIsSubmitting(true);
-        try {
-            await onSubmit(formData);
-            setFormData(initialData); // reset on success
-            setErrors({});
-        } catch (err) {
-            // Error is already handled inside onSubmit (e.g. setSubmitError).
-            // We catch here to prevent an unhandled promise rejection.
-        } finally {
-            setIsSubmitting(false);
+    // Handles user typing and automatically clears the error for that specific field
+    const handleChange = (field, value) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+        
+        if (errors[field]) {
+            setErrors(prev => ({ ...prev, [field]: null }));
         }
     };
 
-    const reset = () => {
-        setFormData(initialData);
+    // Runs your centralized validation engine
+    const validate = () => {
+        if (!validators) return true; 
+        
+        const validationErrors = validateForm(formData, validators);
+        setErrors(validationErrors);
+        
+        return Object.keys(validationErrors).length === 0; 
+    };
+
+    // Resets the form when the modal opens/closes or switches between Add/Edit
+    const reset = (newState) => {
+        setFormData(newState || initialState);
         setErrors({});
     };
 
-    return { formData, errors, isSubmitting, handleChange, handleSubmit, reset };
+    return { formData, setFormData, handleChange, errors, validate, reset };
 }
