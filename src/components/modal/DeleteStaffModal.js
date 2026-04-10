@@ -1,38 +1,34 @@
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 import Button from '../../../global-components/ui/Button';
 import Dialog from '../../../global-components/ui/Dialog';
-import apiClient from '@/lib/apiClient';
+import { useDelete } from '@/hooks/useCrud'; // 🌟 Import the delete hook
 
 export default function DeleteStaffModal({ isOpen, onClose, onSuccess, staff }) {
-    const [isDeleting, setIsDeleting] = useState(false);
-    const [error, setError] = useState('');
+    
+    // 🌟 Initialize the useDelete hook
+    const { deleteRecord, isLoading: isDeleting, error } = useDelete('/users/staff');
 
     const handleDelete = async () => {
-        setIsDeleting(true);
-        setError('');
+        if (!staff) return;
 
-        try {
-            await apiClient(`/users/staff/${staff.staff_no}/`, { method: 'DELETE' });
+        // 🌟 Call the centralized delete function with just the ID
+        const result = await deleteRecord(staff.staff_no);
+        
+        if (result.success) {
             onSuccess();
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setIsDeleting(false);
+            onClose(); // Close the modal upon success
         }
     };
 
     if (!staff) return null;
 
     return (
-        <Dialog
-            isOpen={isOpen}
-            onClose={onClose}
-            title="Delete Staff Member"
-        >
+        <Dialog isOpen={isOpen} onClose={onClose} title="Delete Staff Member">
             <div className="space-y-4">
 
+                {/* 🌟 Hook automatically provides the error message if it fails */}
                 {error && (
                     <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">
                         {error}
@@ -77,7 +73,7 @@ export default function DeleteStaffModal({ isOpen, onClose, onSuccess, staff }) 
 
                 {/* Actions */}
                 <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
-                    <Button variant="ghost" onClick={onClose}>
+                    <Button variant="ghost" onClick={onClose} disabled={isDeleting}>
                         Cancel
                     </Button>
                     <Button variant="danger" onClick={handleDelete} isLoading={isDeleting}>
