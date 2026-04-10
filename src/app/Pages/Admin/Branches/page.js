@@ -68,7 +68,18 @@ export default function BranchesPage() {
             )
         },
         { key: 'telephone_no', label: 'Contact No.' },
+        { 
+            key: 'manager', 
+            label: 'Manager',
+            render: (val, row) => (
+                <span className={`text-sm ${val ? 'text-gray-900 font-medium' : 'text-gray-400 italic'}`}>
+                    {/* If val exists, show it. Otherwise, show 'Unassigned' */}
+                    {val || "Unassigned"}
+                </span>
+            )
+        },
     ];
+
 
     const renderActions = (row) => (
         <div className="flex justify-end gap-3">
@@ -82,7 +93,7 @@ export default function BranchesPage() {
     );
 
     return (
-        <div className="p-8 w-full max-w-7xl mx-auto">
+        <div className=" w-full max-w-7xl mx-auto">
             <div className="mb-8 flex justify-between items-end">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Branch Operations</h1>
