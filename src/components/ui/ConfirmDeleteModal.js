@@ -1,10 +1,9 @@
 import React from 'react';
-import Dialog from './Dialog';
-import Button from './Button';
+import Dialog from '@components/ui/Dialog';
+import Button from '@components/ui/Button'; 
 import { useDelete } from '@/hooks/useCrud';
 
 export default function ConfirmDeleteModal({ isOpen, onClose, onSuccess, endpoint, idToDelete, itemName }) {
-    // It dynamically takes whatever endpoint you pass it!
     const { deleteRecord, isLoading, error } = useDelete(endpoint);
 
     const handleDelete = async () => {
@@ -20,7 +19,7 @@ export default function ConfirmDeleteModal({ isOpen, onClose, onSuccess, endpoin
     return (
         <Dialog isOpen={isOpen} onClose={onClose} title="Confirm Deletion">
             <div className="p-4">
-                <p>Are you sure you want to delete <strong>{itemName}</strong>?</p>
+                <p className="text-gray-700 mb-8">Are you sure you want to delete <strong>{itemName}</strong>?</p>
                 <Button variant="danger" onClick={handleDelete} isLoading={isLoading}>
                     Delete
                 </Button>
