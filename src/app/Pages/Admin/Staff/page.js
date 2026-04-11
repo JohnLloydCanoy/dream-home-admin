@@ -63,7 +63,20 @@ export default function StaffDirectoryPage() {
                     'Secretary': 'bg-orange-100 text-orange-800',
                     'Staff': 'bg-gray-100 text-gray-800'
                 };
-                return <span className={`px-2 py-1 rounded-full text-xs font-bold ${colors[val] || colors['Staff']}`}>{val}</span>;
+                const descriptions = {
+                    'Manager': 'Manages the branch',
+                    'Supervisor': 'In charge of 10 staff each branch',
+                    'Secretary': 'General administrative duties',
+                    'Staff': 'Regular generic staff'
+                };
+                return (
+                    <span 
+                        title={descriptions[val] || descriptions['Staff']} 
+                        className={`px-2 py-1 rounded-full text-xs font-bold cursor-help ${colors[val] || colors['Staff']}`}
+                    >
+                        {val}
+                    </span>
+                );
             }
         },
         { 
@@ -71,6 +84,14 @@ export default function StaffDirectoryPage() {
             render: (val) => val ? (typeof val === 'object' ? val.city : val) : 'Unassigned'
         },
         { key: 'telephone_no', label: 'Contact No.' },
+        {
+            key: 'salary', label: 'Salary',
+            render: (val) => `Ph ${val}`
+        },
+        {
+            key: 'roles', label: 'Roles',
+            render: (val) => Array.isArray(val) ? val.join(', ') : (val || 'None')
+        }
     ];
 
     const renderActions = (row) => (

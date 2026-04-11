@@ -154,7 +154,7 @@ export default function StaffFormModal({ isOpen, onClose, onSuccess, staffToEdit
                         </FormField>
                         <FormField label="Supervisor" field="supervisor" type="select" value={formData.supervisor} onChange={handleChange} error={errors.supervisor} required={false}>
                             <option value="">— None —</option>
-                            {staffList.map(s => <option key={s.staff_no} value={s.staff_no}>{s.first_name} {s.last_name}</option>)}
+                            {staffList.filter(s => s.position === 'Supervisor').map(s => <option key={s.staff_no} value={s.staff_no}>{s.first_name} {s.last_name}</option>)}
                         </FormField>
                     </div>
                 </div>
