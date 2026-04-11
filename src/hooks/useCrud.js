@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import apiClient from '@/lib/apiClient'; // Adjust path if needed
+import apiClient from '@/lib/apiClient';
 
 /**
  * Hook for POST requests (Adding new records)
