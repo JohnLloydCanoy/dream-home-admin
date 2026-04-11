@@ -1,111 +1,325 @@
-"use client";
+'use client';
 
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import DataTable from '@/components/ui/DataTable';
+import Button from '@components/ui/Button';
+import Dialog from '@components/ui/Dialog';
+import ResourceAllocationFormModal from '@/components/ui/ResourceAllocationFormModal';
+import apiClient from '@/lib/apiClient';
+import { useUpdate } from '@/hooks/useCrud';
+
+const normalizeList = (data) => data?.results || data?.items || data || [];
+
+const toId = (value, idField) => {
+	if (!value) return '';
+	if (typeof value === 'object') return value[idField] || '';
+	return value;
+};
+
+const getStaffName = (staff) => {
+	if (!staff) return 'Unknown Staff';
+	const name = `${staff.first_name || ''} ${staff.last_name || ''}`.trim();
+	return name || staff.staff_no;
+};
+
+const getBranchLabel = (branch) => {
+	if (!branch) return 'Unassigned';
+	if (typeof branch === 'object') {
+		if (branch.branch_no && branch.city) return `${branch.branch_no} - ${branch.city}`;
+		return branch.branch_no || branch.city || 'Unassigned';
+	}
+	return branch;
+};
+
+const getSupervisorLabel = (supervisor) => {
+	if (!supervisor) return 'None';
+	if (typeof supervisor === 'object') {
+		return `${getStaffName(supervisor)} (${supervisor.staff_no})`;
+	}
+	return supervisor;
+};
+
+const positionBadgeStyles = {
+	Staff: 'bg-gray-100 text-gray-700',
+	Supervisor: 'bg-blue-100 text-blue-800',
+	Secretary: 'bg-amber-100 text-amber-800',
+	Manager: 'bg-green-100 text-green-800'
+};
 
 export default function ResourceAllocationPage() {
-    const resources = [
-        { id: 1, name: 'Company Vehicles', allocated: 12, total: 15, unit: 'Units' },
-        { id: 2, name: 'Workstations/Laptops', allocated: 45, total: 50, unit: 'Units' },
-        { id: 3, name: 'Operational Budget', allocated: 75000, total: 100000, unit: 'GBP' },
-    ];
+	const [allocations, setAllocations] = useState([]);
+	const [isLoading, setIsLoading] = useState(true);
+	const [loadError, setLoadError] = useState('');
 
-    const branchDistrubution = [
-        { branch: 'B001 - London', staff: 8, vehicles: 5, laptops: 10 },
-        { branch: 'B002 - Glasgow', staff: 5, vehicles: 3, laptops: 7 },
-        { branch: 'B003 - Aberdeen', staff: 4, vehicles: 2, laptops: 5 },
-    ];
+	const [isFormOpen, setIsFormOpen] = useState(false);
+	const [allocationToEdit, setAllocationToEdit] = useState(null);
 
-    return (
-        <div className="space-y-8">
-            {/* Header */}
-            <div>
-                <h1 className="text-3xl font-extrabold text-[#002147] tracking-tight">
-                    Resource Allocation
-                </h1>
-                <p className="text-gray-600 mt-1 font-medium">
-                    Monitor and distribute company assets across all DreamHome branches.
-                </p>
-            </div>
+	const [isDeallocateOpen, setIsDeallocateOpen] = useState(false);
+	const [allocationToDeallocate, setAllocationToDeallocate] = useState(null);
 
-            {/* Global Resource Capacity Cards */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {resources.map((res) => {
-                    const percentage = (res.allocated / res.total) * 100;
-                    return (
-                        <div key={res.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm font-bold text-gray-500 uppercase">{res.name}</span>
-                                <span className="text-xs font-bold text-blue-600">{Math.round(percentage)}% Used</span>
-                            </div>
-                            <div className="space-y-2">
-                                <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                                    <div 
-                                        className="h-full bg-blue-600 transition-all duration-500" 
-                                        style={{ width: `${percentage}%` }}
-                                    ></div>
-                                </div>
-                                <div className="flex justify-between text-xs font-medium text-gray-400">
-                                    <span>{res.allocated} {res.unit} Allocated</span>
-                                    <span>{res.total} Total</span>
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
+	const {
+		updateRecord,
+		isLoading: isDeallocating,
+		error: deallocateError,
+		setError: setDeallocateError
+	} = useUpdate('/users/staff');
 
-            {/* Detailed Distribution Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-6 border-b border-gray-50 flex justify-between items-center">
-                    <h2 className="text-lg font-bold text-[#002147]">Branch Asset Breakdown</h2>
-                    <button className="bg-[#002147] text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-[#001833] transition">
-                        Reallocate Assets
-                    </button>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead className="bg-gray-50 text-gray-500 text-[10px] uppercase font-bold tracking-widest border-b border-gray-100">
-                            <tr>
-                                <th className="px-6 py-4">Branch Location</th>
-                                <th className="px-6 py-4">On-site Staff</th>
-                                <th className="px-6 py-4">Vehicles</th>
-                                <th className="px-6 py-4">Laptops</th>
-                                <th className="px-6 py-4">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
-                            {branchDistrubution.map((item, idx) => (
-                                <tr key={idx} className="hover:bg-gray-50/50 transition">
-                                    <td className="px-6 py-4 font-bold text-[#002147] text-sm">{item.branch}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-600">{item.staff}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-600">{item.vehicles}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-600">{item.laptops}</td>
-                                    <td className="px-6 py-4">
-                                        <span className="px-2 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded uppercase">
-                                            Optimal
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+	const loadAllocations = async () => {
+		setIsLoading(true);
+		setLoadError('');
 
-            {/* Placeholder for Resource Request Logic */}
-            <div className="p-8 bg-blue-900/5 border-2 border-dashed border-blue-200 rounded-2xl flex flex-col items-center justify-center text-center space-y-3">
-                <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0h-3m-9-4.512a11.95 11.95 0 0112-2.944 11.95 11.95 0 0112 2.944M12 2.944v2.126m0 0a12.974 12.974 0 010 18.004m0-18.004a12.974 12.974 0 000 18.004m0 0v2.126" />
-                    </svg>
-                </div>
-                <div>
-                    <h3 className="font-bold text-[#002147]">Inventory Management</h3>
-                    <p className="text-sm text-gray-500 max-w-sm">
-                        This section will eventually link to your Assets database to track real-time inventory levels across the UK.
-                    </p>
-                </div>
-            </div>
-        </div>
-    );
+		try {
+			const data = await apiClient('/users/staff/');
+			setAllocations(normalizeList(data));
+		} catch (error) {
+			console.error('Failed to load resource allocations:', error);
+			setLoadError('Unable to load resource allocation records right now.');
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	useEffect(() => {
+		loadAllocations();
+	}, []);
+
+	const allocationSummary = useMemo(() => {
+		const assigned = allocations.filter((staff) => Boolean(toId(staff.branch, 'branch_no'))).length;
+		const unassigned = allocations.length - assigned;
+
+		return {
+			total: allocations.length,
+			assigned,
+			unassigned,
+			managers: allocations.filter((staff) => staff.position === 'Manager').length
+		};
+	}, [allocations]);
+
+	const hasUnassignedStaff = allocationSummary.unassigned > 0;
+
+	const handleAddClick = () => {
+		setAllocationToEdit(null);
+		setIsFormOpen(true);
+	};
+
+	const handleEditClick = (row) => {
+		setAllocationToEdit(row);
+		setIsFormOpen(true);
+	};
+
+	const handleOpenDeallocate = (row) => {
+		setAllocationToDeallocate(row);
+		setDeallocateError(null);
+		setIsDeallocateOpen(true);
+	};
+
+	const closeDeallocateDialog = () => {
+		setIsDeallocateOpen(false);
+		setAllocationToDeallocate(null);
+		setDeallocateError(null);
+	};
+
+	const handleConfirmDeallocate = async () => {
+		if (!allocationToDeallocate?.staff_no) return;
+
+		const payload = {
+			branch: null,
+			supervisor: null,
+			position: 'Staff',
+			typing_speed: null,
+			manager_start_date: null,
+			bonus_payment: null,
+			car_allowance: null
+		};
+
+		const result = await updateRecord(allocationToDeallocate.staff_no, payload, 'PATCH');
+
+		if (result.success) {
+			closeDeallocateDialog();
+			loadAllocations();
+		}
+	};
+
+	const tableColumns = [
+		{
+			key: 'staff_no',
+			label: 'Staff ID',
+			render: (value) => (
+				<span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded text-xs">
+					{value}
+				</span>
+			)
+		},
+		{
+			key: 'staff_member',
+			label: 'Staff Member',
+			render: (_, row) => (
+				<div>
+					<p className="font-semibold text-gray-900">{getStaffName(row)}</p>
+					<p className="text-xs text-gray-500">{row.email || 'No email on file'}</p>
+				</div>
+			)
+		},
+		{
+			key: 'branch',
+			label: 'Branch',
+			render: (value) => (
+				<span className={value ? 'text-gray-900 font-medium' : 'text-gray-400 italic'}>
+					{getBranchLabel(value)}
+				</span>
+			)
+		},
+		{
+			key: 'position',
+			label: 'Responsibility',
+			render: (value) => (
+				<span className={`px-2.5 py-1 rounded-full text-xs font-bold ${positionBadgeStyles[value] || positionBadgeStyles.Staff}`}>
+					{value || 'Staff'}
+				</span>
+			)
+		},
+		{
+			key: 'supervisor',
+			label: 'Supervisor',
+			render: (value) => (
+				<span className={value ? 'text-gray-900 text-sm' : 'text-gray-400 italic text-sm'}>
+					{getSupervisorLabel(value)}
+				</span>
+			)
+		},
+		{
+			key: 'allocation_status',
+			label: 'Allocation',
+			render: (_, row) => {
+				const isAssigned = Boolean(toId(row.branch, 'branch_no'));
+				return (
+					<span className={`px-2.5 py-1 rounded-full text-xs font-bold ${isAssigned ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+						{isAssigned ? 'Assigned' : 'Unassigned'}
+					</span>
+				);
+			}
+		}
+	];
+
+	const renderActions = (row) => {
+		const isAssigned = Boolean(toId(row.branch, 'branch_no'));
+
+		return (
+			<div className="flex justify-end gap-2">
+				<Button
+					variant="ghost"
+					size="sm"
+					onClick={(event) => {
+						event.stopPropagation();
+						handleEditClick(row);
+					}}
+				>
+					Edit
+				</Button>
+				<Button
+					variant="danger"
+					size="sm"
+					disabled={!isAssigned}
+					onClick={(event) => {
+						event.stopPropagation();
+						handleOpenDeallocate(row);
+					}}
+				>
+					Deallocate
+				</Button>
+			</div>
+		);
+	};
+
+	return (
+		<div className="w-full max-w-7xl mx-auto space-y-6">
+			<div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+				<div>
+					<h1 className="text-3xl font-bold text-gray-900">Resource Allocation</h1>
+					<p className="text-sm text-gray-500 mt-1">
+						Assign staff to branches and responsibilities with controlled role-specific fields.
+					</p>
+				</div>
+
+				<Button
+					variant="primary"
+					onClick={handleAddClick}
+					disabled={!hasUnassignedStaff}
+					title={!hasUnassignedStaff ? 'All staff are already assigned. Use Edit to reallocate.' : ''}
+				>
+					+ Assign Staff
+				</Button>
+			</div>
+
+			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+				<div className="bg-white border border-gray-200 rounded-xl p-4">
+					<p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Total Staff</p>
+					<p className="text-2xl font-bold text-gray-900 mt-1">{allocationSummary.total}</p>
+				</div>
+				<div className="bg-white border border-gray-200 rounded-xl p-4">
+					<p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Assigned</p>
+					<p className="text-2xl font-bold text-green-700 mt-1">{allocationSummary.assigned}</p>
+				</div>
+				<div className="bg-white border border-gray-200 rounded-xl p-4">
+					<p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Unassigned</p>
+					<p className="text-2xl font-bold text-amber-700 mt-1">{allocationSummary.unassigned}</p>
+				</div>
+				<div className="bg-white border border-gray-200 rounded-xl p-4">
+					<p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Managers</p>
+					<p className="text-2xl font-bold text-blue-700 mt-1">{allocationSummary.managers}</p>
+				</div>
+			</div>
+
+			{loadError && (
+				<div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">
+					{loadError}
+				</div>
+			)}
+
+			<DataTable
+				columns={tableColumns}
+				data={allocations}
+				keyField="staff_no"
+				isLoading={isLoading}
+				emptyMessage="No staff records found for allocation."
+				onRowClick={handleEditClick}
+				actions={renderActions}
+			/>
+
+			<ResourceAllocationFormModal
+				isOpen={isFormOpen}
+				onClose={() => setIsFormOpen(false)}
+				onSuccess={loadAllocations}
+				allocationToEdit={allocationToEdit}
+			/>
+
+			<Dialog
+				isOpen={isDeallocateOpen}
+				onClose={closeDeallocateDialog}
+				title="Confirm Deallocation"
+			>
+				<div className="space-y-4">
+					<p className="text-sm text-gray-700">
+						Remove <strong>{getStaffName(allocationToDeallocate)}</strong> from branch allocation?
+						This keeps the staff profile but clears branch, supervisor, and responsibility-specific fields.
+					</p>
+
+					{deallocateError && (
+						<div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">
+							{deallocateError}
+						</div>
+					)}
+
+					<div className="flex justify-end gap-3 pt-2">
+						<Button variant="ghost" onClick={closeDeallocateDialog} disabled={isDeallocating}>
+							Cancel
+						</Button>
+						<Button variant="danger" onClick={handleConfirmDeallocate} isLoading={isDeallocating}>
+							Confirm Deallocate
+						</Button>
+					</div>
+				</div>
+			</Dialog>
+		</div>
+	);
 }
