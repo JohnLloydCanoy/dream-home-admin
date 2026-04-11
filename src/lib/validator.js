@@ -74,6 +74,31 @@ export const staffValidators = {
 };
 
 /**
+ * 🏘️ Property Validation Rules
+ */
+export const propertyValidators = {
+    street:        { required: true, maxLength: 255, label: 'Street Address' },
+    city:          { required: true, maxLength: 100, label: 'City' },
+    postcode:      { required: true, maxLength: 20, label: 'Postcode' },
+    property_type: { required: true, maxLength: 50, label: 'Property Type' },
+    no_of_rooms:   {
+        required: true,
+        label: 'No. of Rooms',
+        pattern: /^[1-9]\d*$/,
+        patternMessage: 'No. of rooms must be a whole number greater than 0'
+    },
+    monthly_rent:  {
+        required: true,
+        label: 'Monthly Rent',
+        pattern: /^\d+(\.\d{1,2})?$/,
+        patternMessage: 'Monthly rent must be a valid amount'
+    },
+    status:        { required: true, maxLength: 50, label: 'Status' },
+    owner:         { required: true, label: 'Owner' },
+    branch:        { required: true, label: 'Branch' }
+};
+
+/**
  * 📄 Lease Validation Rules (Ready for when you build the Lease form!)
  */
 export const leaseValidators = {
@@ -86,3 +111,4 @@ export const leaseValidators = {
     payment_method:{ required: true, label: 'Payment Method' },
     deposit:      { required: true, label: 'Deposit Amount' }
 };
+

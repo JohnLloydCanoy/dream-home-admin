@@ -121,7 +121,7 @@ export default function BranchesPage() {
             />
 
             {/* Using the Universal Delete Modal! */}
-            <ConfirmDeleteModal
+            <ConfirmDeleteModal 
                 isOpen={isDeleteOpen}
                 onClose={() => setIsDeleteOpen(false)}
                 onSuccess={loadBranches}
