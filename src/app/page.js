@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { loginAdmin, logoutAdmin } from "../lib/authService";
 import { jwtDecode } from "jwt-decode";
+import { loginAdmin, logoutAdmin } from "../lib/authService";
 
 export default function Home() {
   const router = useRouter();
