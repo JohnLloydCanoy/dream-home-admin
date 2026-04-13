@@ -99,6 +99,15 @@ export const propertyValidators = {
 };
 
 /**
+ * 👀 Property Viewing Validation Rules
+ */
+export const propertyViewingValidators = {
+    property:   { required: true, label: 'Property' },
+    renter:     { required: true, label: 'Renter' },
+    view_date:  { required: true, label: 'Viewing Date' }
+};
+
+/**
  * 📄 Lease Validation Rules (Ready for when you build the Lease form!)
  */
 export const leaseValidators = {

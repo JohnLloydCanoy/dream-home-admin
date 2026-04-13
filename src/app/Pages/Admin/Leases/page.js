@@ -1,95 +1,176 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import DataTable from '@/components/ui/DataTable';
-import apiClient from '@/lib/apiClient'; 
+import LeaseFormModal from '@/components/ui/LeaseFormModal';
+import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal';
+import apiClient from '@/lib/apiClient';
 
-export default function LeasesPage() {
-    const [leases, setLeases] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+const formatCurrency = (value) => {
+	const amount = Number(value);
+	if (Number.isNaN(amount)) return value;
+	return amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
 
-    useEffect(() => {
-        let isMounted = true;
+const formatDate = (value) => {
+	if (!value) return 'N/A';
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return value;
+	return date.toLocaleDateString();
+};
 
-        const fetchLeases = async () => {
-            try {
-                const data = await apiClient('/leases/'); 
-                if (isMounted) {
-                    setLeases(data.items || data); 
-                }
-            } catch (error) {
-                console.error("Failed to load leases:", error);
-            } finally {
-                if (isMounted) setIsLoading(false);
-            }
-        };
+export default function LeaseAgreementsPage() {
+	// Data State
+	const [leases, setLeases] = useState([]);
+	const [isLoading, setIsLoading] = useState(true);
 
-        fetchLeases();
-        return () => { isMounted = false; };
-    }, []);
+	// Modal States
+	const [isFormOpen, setIsFormOpen] = useState(false);
+	const [leaseToEdit, setLeaseToEdit] = useState(null);
+	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+	const [leaseToDelete, setLeaseToDelete] = useState(null);
 
-    const tableColumns = [
-        { 
-            key: 'lease_no', 
-            label: 'Lease No.',
-            render: (value) => <span className="font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">{value}</span> 
-        },
-        { key: 'property_id', label: 'Property' },
-        { key: 'renter_name', label: 'Renter' },
-        { 
-            key: 'duration', 
-            label: 'Duration',
-            render: (value) => `${value} Months`
-        },
-        { 
-            key: 'monthly_rent', 
-            label: 'Monthly Rent',
-            render: (value) => <span className="font-medium">£{value}</span> 
-        },
-        { 
-            key: 'deposit_paid', 
-            label: 'Deposit Status',
-            // Dynamic badge based on the boolean value!
-            render: (value) => (
-                <span className={`px-3 py-1 rounded-full text-xs font-bold ${value ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                    {value ? 'Paid' : 'Pending'}
-                </span>
-            )
-        }
-    ];
+	const loadLeases = async () => {
+		setIsLoading(true);
+		try {
+			const data = await apiClient('/leases/');
+			setLeases(data.results || data.items || data);
+		} catch (error) {
+			console.error('Failed to load leases:', error);
+		} finally {
+			setIsLoading(false);
+		}
+	};
 
-    const renderActions = (row) => (
-        <div className="flex justify-end gap-3">
-            <button className="text-blue-600 hover:text-blue-900 text-sm font-semibold transition-colors">
-                View Contract
-            </button>
-        </div>
-    );
+	useEffect(() => { loadLeases(); }, []);
 
-    return (
-        <div className="w-full max-w-7xl mx-auto">
-            <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Lease Agreements</h1>
-                    <p className="text-sm text-gray-500 mt-1">Manage active, pending, and expired lease contracts.</p>
-                </div>
-                
-                <button className="bg-[#002147] hover:bg-blue-900 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors shadow-sm flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Create Lease
-                </button>
-            </div>
+	const handleAddClick = () => {
+		setLeaseToEdit(null);
+		setIsFormOpen(true);
+	};
 
-            <DataTable 
-                columns={tableColumns} 
-                data={leases} 
-                keyField="lease_no"
-                isLoading={isLoading}
-                actions={renderActions}
-                emptyMessage="No lease agreements found."
-            />
-        </div>
-    );
+	const handleEditClick = (lease) => {
+		setLeaseToEdit(lease);
+		setIsFormOpen(true);
+	};
+
+	const handleDeleteClick = (lease) => {
+		setLeaseToDelete(lease);
+		setIsDeleteOpen(true);
+	};
+
+	const tableColumns = [
+		{
+			key: 'lease_no',
+			label: 'Lease ID',
+			render: (val) => <span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">{val}</span>
+		},
+		{
+			key: 'property',
+			label: 'Property',
+			render: (val) => <span className="font-medium text-gray-900">{val}</span>
+		},
+		{
+			key: 'renter',
+			label: 'Renter',
+			render: (val) => <span className="text-gray-700">{val}</span>
+		},
+		{
+			key: 'period',
+			label: 'Lease Period',
+			render: (val, row) => (
+				<span className="text-xs text-gray-700">
+					{formatDate(row.rent_start)} - {formatDate(row.rent_finish)}
+				</span>
+			)
+		},
+		{
+			key: 'duration',
+			label: 'Duration',
+			render: (val) => `${val} month${Number(val) === 1 ? '' : 's'}`
+		},
+		{
+			key: 'monthly_rent',
+			label: 'Monthly Rent',
+			render: (val) => <span className="font-medium text-gray-900">£{formatCurrency(val)}</span>
+		},
+		{
+			key: 'deposit',
+			label: 'Deposit',
+			render: (val) => <span className="font-medium text-gray-900">£{formatCurrency(val)}</span>
+		},
+		{
+			key: 'deposit_paid',
+			label: 'Deposit Status',
+			render: (val) => (
+				<span className={`px-2 py-1 rounded-full text-xs font-bold ${val ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}`}>
+					{val ? 'Paid' : 'Pending'}
+				</span>
+			)
+		},
+		{
+			key: 'payment_method',
+			label: 'Payment Method'
+		},
+		{
+			key: 'staff',
+			label: 'Arranged By',
+			render: (val) => val || 'Unassigned'
+		}
+	];
+
+	const renderActions = (row) => (
+		<div className="flex justify-end gap-3">
+			<button
+				onClick={(e) => { e.stopPropagation(); handleEditClick(row); }}
+				className="text-blue-600 hover:text-blue-900 text-sm font-semibold"
+			>
+				Edit
+			</button>
+			<button
+				onClick={(e) => { e.stopPropagation(); handleDeleteClick(row); }}
+				className="text-red-600 hover:text-red-900 text-sm font-semibold"
+			>
+				Delete
+			</button>
+		</div>
+	);
+
+	return (
+		<div className=" w-full max-w-7xl mx-auto">
+			<div className="mb-8 flex justify-between items-end">
+				<div>
+					<h1 className="text-3xl font-bold text-gray-900">Lease Agreements</h1>
+					<p className="text-sm text-gray-500 mt-1">Manage renter lease contracts, deposits, and payment terms.</p>
+				</div>
+				<button onClick={handleAddClick} className="bg-[#002147] hover:bg-blue-900 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-sm">
+					+ New Lease
+				</button>
+			</div>
+
+			<DataTable
+				columns={tableColumns}
+				data={leases}
+				keyField="lease_no"
+				isLoading={isLoading}
+				actions={renderActions}
+			/>
+
+			<LeaseFormModal
+				isOpen={isFormOpen}
+				onClose={() => setIsFormOpen(false)}
+				onSuccess={loadLeases}
+				leaseToEdit={leaseToEdit}
+			/>
+
+			<ConfirmDeleteModal
+				isOpen={isDeleteOpen}
+				onClose={() => setIsDeleteOpen(false)}
+				onSuccess={loadLeases}
+				endpoint="/leases"
+				idToDelete={leaseToDelete?.lease_no}
+				itemName={`Lease ${leaseToDelete?.lease_no}`}
+			/>
+		</div>
+	);
 }
