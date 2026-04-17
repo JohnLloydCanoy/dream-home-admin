@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import DataTable from '@/components/ui/DataTable';
 import FormField from '@/components/ui/FormField';
 import Button from '@components/ui/Button';
-import ClientBranchModal from '@/components/ui/ClientBranchModal';
+import ClientAssignmentModal from '@/components/ui/ClientAssignmentModal';
 import apiClient from '@/lib/apiClient';
 import { useForm } from '@/hooks/useForm';
 
@@ -21,15 +21,13 @@ const getClientName = (client) => {
     return `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.client_no;
 };
 
-const getBranchLabel = (branch) => {
-    if (!branch) return 'Unregistered';
-    if (typeof branch === 'object') {
-        const branchNo = branch.branch_no || '';
-        const city = branch.city || '';
-        if (branchNo && city) return `${branchNo} - ${city}`;
-        return branchNo || city || 'Unregistered';
+const getAssignedStaffLabel = (assignedStaff) => {
+    if (!assignedStaff) return 'Unassigned';
+    if (typeof assignedStaff === 'object') {
+        const fullName = `${assignedStaff.first_name || ''} ${assignedStaff.last_name || ''}`.trim();
+        return `${fullName || assignedStaff.staff_no} (${assignedStaff.staff_no})`;
     }
-    return branch;
+    return assignedStaff;
 };
 
 const roleBadgeStyles = {
@@ -37,71 +35,63 @@ const roleBadgeStyles = {
     owner: 'bg-orange-100 text-orange-800'
 };
 
-export default function RegistrationsPage() {
+export default function ClientAssignmentsPage() {
     const [clients, setClients] = useState([]);
-    const [branches, setBranches] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [loadError, setLoadError] = useState('');
 
+    const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
     const [selectedClient, setSelectedClient] = useState(null);
-    const [isBranchModalOpen, setIsBranchModalOpen] = useState(false);
 
-    const { formData, handleChange, reset } = useForm({ branch_filter: 'all' }, {});
+    const { formData, handleChange, reset } = useForm({ role_filter: 'all' }, {});
 
-    const loadData = async () => {
+    const loadClients = async () => {
         setIsLoading(true);
         setLoadError('');
-
         try {
-            const [clientsData, branchesData] = await Promise.all([
-                apiClient('/users/clients/'),
-                apiClient('/branches/')
-            ]);
-
-            setClients(normalizeList(clientsData));
-            setBranches(normalizeList(branchesData));
+            const data = await apiClient('/users/clients/');
+            setClients(normalizeList(data));
         } catch (error) {
-            console.error('Failed to load branch registrations:', error);
-            setLoadError('Unable to load client branch registrations right now.');
+            console.error('Failed to load clients for assignments:', error);
+            setLoadError('Unable to load client relationships right now.');
         } finally {
             setIsLoading(false);
         }
     };
 
     useEffect(() => {
-        loadData();
+        loadClients();
     }, []);
 
     const filteredClients = useMemo(() => {
-        const selectedFilter = String(formData.branch_filter || 'all').toLowerCase();
+        const selectedRole = String(formData.role_filter || 'all').toLowerCase();
+        if (selectedRole === 'all') return clients;
 
-        if (selectedFilter === 'all') return clients;
-        if (selectedFilter === 'unregistered') {
-            return clients.filter((client) => !toId(client.registration_branch, 'branch_no'));
-        }
-
-        return clients.filter((client) => toId(client.registration_branch, 'branch_no') === formData.branch_filter);
-    }, [clients, formData.branch_filter]);
+        return clients.filter((client) => String(client.role || '').toLowerCase() === selectedRole);
+    }, [clients, formData.role_filter]);
 
     const summary = useMemo(() => {
-        const registered = clients.filter((client) => Boolean(toId(client.registration_branch, 'branch_no'))).length;
+        const renters = clients.filter((client) => String(client.role || '').toLowerCase() === 'renter').length;
+        const owners = clients.filter((client) => String(client.role || '').toLowerCase() === 'owner').length;
+        const assigned = clients.filter((client) => Boolean(toId(client.assigned_staff, 'staff_no'))).length;
 
         return {
-            totalClients: clients.length,
-            totalBranches: branches.length,
-            registered,
-            unregistered: clients.length - registered
+            total: clients.length,
+            renters,
+            owners,
+            assigned,
+            unassigned: clients.length - assigned
         };
-    }, [clients, branches]);
+    }, [clients]);
 
-    const openBranchModal = (client = selectedClient) => {
+    const openAssignmentModal = (client = selectedClient) => {
         if (!client) return;
         setSelectedClient(client);
-        setIsBranchModalOpen(true);
+        setIsAssignmentModalOpen(true);
     };
 
-    const closeBranchModal = () => {
-        setIsBranchModalOpen(false);
+    const closeAssignmentModal = () => {
+        setIsAssignmentModalOpen(false);
     };
 
     const tableColumns = [
@@ -137,38 +127,38 @@ export default function RegistrationsPage() {
             }
         },
         {
-            key: 'registration_branch',
-            label: 'Registration Branch',
+            key: 'telephone_no',
+            label: 'Telephone',
+            render: (value) => value || 'N/A'
+        },
+        {
+            key: 'assigned_staff',
+            label: 'Assigned Staff',
             render: (value) => {
-                const label = getBranchLabel(value);
-                const isRegistered = label !== 'Unregistered';
+                const label = getAssignedStaffLabel(value);
+                const isAssigned = label !== 'Unassigned';
                 return (
-                    <span className={isRegistered ? 'text-gray-900 font-medium' : 'text-gray-400 italic'}>
+                    <span className={isAssigned ? 'text-gray-900 font-medium' : 'text-gray-400 italic'}>
                         {label}
                     </span>
                 );
             }
-        },
-        {
-            key: 'telephone_no',
-            label: 'Telephone',
-            render: (value) => value || 'N/A'
         }
     ];
 
     const renderActions = (row) => {
-        const isRegistered = Boolean(toId(row.registration_branch, 'branch_no'));
+        const isAssigned = Boolean(toId(row.assigned_staff, 'staff_no'));
 
         return (
             <Button
-                variant={isRegistered ? 'secondary' : 'primary'}
+                variant={isAssigned ? 'secondary' : 'primary'}
                 size="sm"
                 onClick={(event) => {
                     event.stopPropagation();
-                    openBranchModal(row);
+                    openAssignmentModal(row);
                 }}
             >
-                {isRegistered ? 'Transfer Branch' : 'Register Branch'}
+                {isAssigned ? 'Reassign Staff' : 'Assign Staff'}
             </Button>
         );
     };
@@ -177,58 +167,58 @@ export default function RegistrationsPage() {
         <div className="w-full max-w-7xl mx-auto space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Client Relations - Branch Registrations</h1>
+                    <h1 className="text-3xl font-bold text-gray-900">Client Relations Dashboard</h1>
                     <p className="text-sm text-gray-500 mt-1">
-                        Register and transfer existing clients to specific regional branches.
+                        Assign specific staff relationship managers to renters and owners.
                     </p>
                 </div>
 
                 <div className="flex gap-2">
-                    <Button variant="secondary" onClick={loadData}>
+                    <Button variant="secondary" onClick={loadClients}>
                         Refresh
                     </Button>
-                    <Button variant="primary" onClick={() => openBranchModal()} disabled={!selectedClient}>
-                        Transfer/Register Branch
+                    <Button variant="primary" onClick={() => openAssignmentModal()} disabled={!selectedClient}>
+                        Assign Staff
                     </Button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                 <div className="bg-white border border-gray-200 rounded-xl p-4">
                     <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Total Clients</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">{summary.totalClients}</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-1">{summary.total}</p>
                 </div>
                 <div className="bg-white border border-gray-200 rounded-xl p-4">
-                    <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Branches</p>
-                    <p className="text-2xl font-bold text-blue-700 mt-1">{summary.totalBranches}</p>
+                    <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Renters</p>
+                    <p className="text-2xl font-bold text-blue-700 mt-1">{summary.renters}</p>
                 </div>
                 <div className="bg-white border border-gray-200 rounded-xl p-4">
-                    <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Registered</p>
-                    <p className="text-2xl font-bold text-green-700 mt-1">{summary.registered}</p>
+                    <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Owners</p>
+                    <p className="text-2xl font-bold text-orange-700 mt-1">{summary.owners}</p>
                 </div>
                 <div className="bg-white border border-gray-200 rounded-xl p-4">
-                    <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Unregistered</p>
-                    <p className="text-2xl font-bold text-amber-700 mt-1">{summary.unregistered}</p>
+                    <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Assigned</p>
+                    <p className="text-2xl font-bold text-green-700 mt-1">{summary.assigned}</p>
+                </div>
+                <div className="bg-white border border-gray-200 rounded-xl p-4">
+                    <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Unassigned</p>
+                    <p className="text-2xl font-bold text-amber-700 mt-1">{summary.unassigned}</p>
                 </div>
             </div>
 
             <div className="bg-white border border-gray-200 rounded-xl p-4">
-                <div className="w-full sm:w-80">
+                <div className="w-full sm:w-64">
                     <FormField
-                        label="Branch Filter"
-                        field="branch_filter"
+                        label="Role Filter"
+                        field="role_filter"
                         type="select"
-                        value={formData.branch_filter}
+                        value={formData.role_filter}
                         onChange={handleChange}
                         required={false}
                     >
-                        <option value="all">All Branches</option>
-                        <option value="unregistered">Unregistered Clients</option>
-                        {branches.map((branch) => (
-                            <option key={branch.branch_no} value={branch.branch_no}>
-                                {branch.branch_no} - {branch.city}
-                            </option>
-                        ))}
+                        <option value="all">All Clients</option>
+                        <option value="renter">Renters</option>
+                        <option value="owner">Owners</option>
                     </FormField>
                 </div>
 
@@ -236,8 +226,8 @@ export default function RegistrationsPage() {
                     <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => reset({ branch_filter: 'all' })}
-                        disabled={formData.branch_filter === 'all'}
+                        onClick={() => reset({ role_filter: 'all' })}
+                        disabled={formData.role_filter === 'all'}
                     >
                         Reset Filter
                     </Button>
@@ -261,16 +251,16 @@ export default function RegistrationsPage() {
                 data={filteredClients}
                 keyField="client_no"
                 isLoading={isLoading}
-                emptyMessage="No clients found for the selected branch filter."
+                emptyMessage="No clients found for the selected role filter."
                 onRowClick={setSelectedClient}
                 actions={renderActions}
             />
 
-            <ClientBranchModal
-                isOpen={isBranchModalOpen}
-                onClose={closeBranchModal}
-                onSuccess={loadData}
-                clientToRegister={selectedClient}
+            <ClientAssignmentModal
+                isOpen={isAssignmentModalOpen}
+                onClose={closeAssignmentModal}
+                onSuccess={loadClients}
+                clientToAssign={selectedClient}
             />
         </div>
     );

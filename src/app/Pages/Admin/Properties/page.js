@@ -79,7 +79,7 @@ export default function PropertiesPage() {
                     ? value
                     : amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-                return <span className="font-medium text-gray-900">£{formatted}</span>;
+                return <span className="font-medium text-gray-900">₱{formatted}</span>;
             }
         },
         { 
