@@ -1,31 +1,197 @@
-import React from 'react';
+'use client';
 
-export default function ViewingsPage() {
-    return (
-        <div className="p-8 w-full">
-            
-            {/* --- 1. CHANGE TITLE AND DESCRIPTION HERE --- */}
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900">Viewings</h1>
-                <p className="text-sm text-gray-500 mt-1">Manage and view details for Viewings.</p>
-            </div>
+import React, { useEffect, useState } from 'react';
+import DataTable from '@/components/ui/DataTable';
+import Button from '@components/ui/Button';
+import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal';
+import ViewingFormModal from '@/components/ui/ViewingFormModal';
+import apiClient from '@/lib/apiClient';
 
-            {/* --- Placeholder Content Card --- */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center flex flex-col items-center justify-center min-h-[400px]">
-                
-                {/* Construction Icon */}
-                <div className="bg-blue-50 p-4 rounded-full mb-4">
-                    <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                    </svg>
-                </div>
-                
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Under Development</h3>
-                <p className="text-gray-500 max-w-md mx-auto">
-                    This section of the DreamHome Admin Portal is currently being built. Future components, tables, and logic will be implemented here.
-                </p>
-            </div>
+const normalizeList = (data) => data?.results || data?.items || data || [];
 
-        </div>
-    );
+const getViewingId = (viewing) => viewing?.id || viewing?.pk || viewing?.viewing_id || null;
+
+const getPropertyLabel = (value) => {
+	if (!value) return 'N/A';
+	if (typeof value === 'object') {
+		const id = value.property_no || value.id || 'N/A';
+		const location = [value.street, value.city].filter(Boolean).join(', ');
+		return location ? `${id} - ${location}` : `${id}`;
+	}
+	return value;
+};
+
+const getClientLabel = (row) => {
+	const value = row.client || row.renter;
+	if (!value) return 'N/A';
+	if (typeof value === 'object') {
+		const fullName = `${value.first_name || ''} ${value.last_name || ''}`.trim();
+		const id = value.client_no || value.id || 'N/A';
+		return `${fullName || 'Unknown Client'} (${id})`;
+	}
+	return value;
+};
+
+const getViewingDate = (row) => row.viewing_date || row.view_date || 'N/A';
+const getViewingTime = (row) => row.viewing_time || 'N/A';
+
+export default function PropertyViewingsPage() {
+	const [viewings, setViewings] = useState([]);
+	const [isLoading, setIsLoading] = useState(true);
+	const [loadError, setLoadError] = useState('');
+
+	const [isFormOpen, setIsFormOpen] = useState(false);
+	const [viewingToEdit, setViewingToEdit] = useState(null);
+
+	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+	const [viewingToDelete, setViewingToDelete] = useState(null);
+
+	const loadViewings = async () => {
+		setIsLoading(true);
+		setLoadError('');
+
+		try {
+			const data = await apiClient('/properties/viewings/');
+			setViewings(normalizeList(data));
+		} catch (error) {
+			console.error('Failed to load property viewings:', error);
+			setLoadError('Unable to load property viewings right now.');
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	useEffect(() => {
+		loadViewings();
+	}, []);
+
+	const handleAddClick = () => {
+		setViewingToEdit(null);
+		setIsFormOpen(true);
+	};
+
+	const handleEditClick = (viewing) => {
+		setViewingToEdit(viewing);
+		setIsFormOpen(true);
+	};
+
+	const handleDeleteClick = (viewing) => {
+		setViewingToDelete(viewing);
+		setIsDeleteOpen(true);
+	};
+
+	const tableColumns = [
+		{
+			key: 'viewing_id',
+			label: 'Viewing ID',
+			render: (_, row) => (
+				<span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded text-xs">
+					{getViewingId(row) || 'N/A'}
+				</span>
+			)
+		},
+		{
+			key: 'property',
+			label: 'Property',
+			render: (value) => <span className="text-gray-900 font-medium">{getPropertyLabel(value)}</span>
+		},
+		{
+			key: 'client',
+			label: 'Client',
+			render: (_, row) => <span className="text-gray-900">{getClientLabel(row)}</span>
+		},
+		{
+			key: 'viewing_date',
+			label: 'Date',
+			render: (_, row) => getViewingDate(row)
+		},
+		{
+			key: 'viewing_time',
+			label: 'Time',
+			render: (_, row) => getViewingTime(row)
+		},
+		{
+			key: 'comments',
+			label: 'Comments',
+			render: (value) => {
+				const text = value || '';
+				if (!text) return 'No feedback';
+				return text.length > 80 ? `${text.slice(0, 80)}...` : text;
+			}
+		}
+	];
+
+	const renderActions = (row) => (
+		<div className="flex justify-end gap-2">
+			<Button
+				variant="secondary"
+				size="sm"
+				onClick={(event) => {
+					event.stopPropagation();
+					handleEditClick(row);
+				}}
+			>
+				Edit
+			</Button>
+			<Button
+				variant="danger"
+				size="sm"
+				onClick={(event) => {
+					event.stopPropagation();
+					handleDeleteClick(row);
+				}}
+			>
+				Delete
+			</Button>
+		</div>
+	);
+
+	return (
+		<div className="w-full max-w-7xl mx-auto space-y-6">
+			<div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+				<div>
+					<h1 className="text-3xl font-bold text-gray-900">Property Viewings</h1>
+					<p className="text-sm text-gray-500 mt-1">
+						Record and review client viewings with schedule and feedback details.
+					</p>
+				</div>
+
+				<Button variant="primary" onClick={handleAddClick}>
+					+ Record New Viewing
+				</Button>
+			</div>
+
+			{loadError && (
+				<div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">
+					{loadError}
+				</div>
+			)}
+
+			<DataTable
+				columns={tableColumns}
+				data={viewings}
+				keyField="id"
+				isLoading={isLoading}
+				emptyMessage="No property viewings recorded yet."
+				onRowClick={handleEditClick}
+				actions={renderActions}
+			/>
+
+			<ViewingFormModal
+				isOpen={isFormOpen}
+				onClose={() => setIsFormOpen(false)}
+				onSuccess={loadViewings}
+				viewingToEdit={viewingToEdit}
+			/>
+
+			<ConfirmDeleteModal
+				isOpen={isDeleteOpen}
+				onClose={() => setIsDeleteOpen(false)}
+				onSuccess={loadViewings}
+				endpoint="/properties/viewings"
+				idToDelete={getViewingId(viewingToDelete)}
+				itemName={`Viewing #${getViewingId(viewingToDelete) || 'N/A'}`}
+			/>
+		</div>
+	);
 }
