@@ -1,31 +1,199 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useMemo, useState } from 'react';
+import DataTable from '@/components/ui/DataTable';
+import Button from '@components/ui/Button';
+import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal';
+import OwnerFormModal from '@/components/ui/OwnerFormModal';
+import apiClient from '@/lib/apiClient';
+
+const normalizeList = (data) => data?.results || data?.items || data || [];
 
 export default function OwnersPage() {
-    return (
-        <div className="p-8 w-full">
-            
-            {/* --- 1. CHANGE TITLE AND DESCRIPTION HERE --- */}
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900">Owners</h1>
-                <p className="text-sm text-gray-500 mt-1">Manage and view details for Owners.</p>
-            </div>
+	const [owners, setOwners] = useState([]);
+	const [isLoading, setIsLoading] = useState(true);
+	const [loadError, setLoadError] = useState('');
 
-            {/* --- Placeholder Content Card --- */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center flex flex-col items-center justify-center min-h-[400px]">
-                
-                {/* Construction Icon */}
-                <div className="bg-blue-50 p-4 rounded-full mb-4">
-                    <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                    </svg>
-                </div>
-                
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Under Development</h3>
-                <p className="text-gray-500 max-w-md mx-auto">
-                    This section of the DreamHome Admin Portal is currently being built. Future components, tables, and logic will be implemented here.
-                </p>
-            </div>
+	const [isFormOpen, setIsFormOpen] = useState(false);
+	const [ownerToEdit, setOwnerToEdit] = useState(null);
 
-        </div>
-    );
+	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+	const [ownerToDelete, setOwnerToDelete] = useState(null);
+
+	const loadOwners = async () => {
+		setIsLoading(true);
+		setLoadError('');
+
+		try {
+			const data = await apiClient('/users/client/');
+			const ownerOnly = normalizeList(data).filter((client) => client.role === 'Owner');
+			setOwners(ownerOnly);
+		} catch (error) {
+			console.error('Failed to load property owners:', error);
+			setLoadError('Unable to load property owners right now.');
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	useEffect(() => {
+		loadOwners();
+	}, []);
+
+	const summary = useMemo(() => {
+		return {
+			total: owners.length,
+			withEmail: owners.filter((owner) => Boolean(owner.email)).length,
+			withPhone: owners.filter((owner) => Boolean(owner.telephone_no)).length
+		};
+	}, [owners]);
+
+	const handleAddClick = () => {
+		setOwnerToEdit(null);
+		setIsFormOpen(true);
+	};
+
+	const handleEditClick = (owner) => {
+		setOwnerToEdit(owner);
+		setIsFormOpen(true);
+	};
+
+	const handleDeleteClick = (owner) => {
+		setOwnerToDelete(owner);
+		setIsDeleteOpen(true);
+	};
+
+	const tableColumns = [
+		{
+			key: 'client_no',
+			label: 'Owner ID',
+			render: (value) => (
+				<span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded text-xs">
+					{value}
+				</span>
+			)
+		},
+		{
+			key: 'owner_name',
+			label: 'Full Name',
+			render: (_, row) => (
+				<span className="font-semibold text-gray-900">
+					{row.first_name} {row.last_name}
+				</span>
+			)
+		},
+		{
+			key: 'email',
+			label: 'Email',
+			render: (value) => value || 'N/A'
+		},
+		{
+			key: 'telephone_no',
+			label: 'Telephone',
+			render: (value) => value || 'N/A'
+		},
+		{
+			key: 'address',
+			label: 'Address',
+			render: (value) => value || 'N/A'
+		},
+		{
+			key: 'role',
+			label: 'Role',
+			render: (value) => (
+				<span className="px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-800">
+					{value}
+				</span>
+			)
+		}
+	];
+
+	const renderActions = (row) => (
+		<div className="flex justify-end gap-2">
+			<Button
+				variant="secondary"
+				size="sm"
+				onClick={(event) => {
+					event.stopPropagation();
+					handleEditClick(row);
+				}}
+			>
+				Edit
+			</Button>
+			<Button
+				variant="danger"
+				size="sm"
+				onClick={(event) => {
+					event.stopPropagation();
+					handleDeleteClick(row);
+				}}
+			>
+				Delete
+			</Button>
+		</div>
+	);
+
+	return (
+		<div className="w-full max-w-7xl mx-auto space-y-6">
+			<div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+				<div>
+					<h1 className="text-3xl font-bold text-gray-900">Property Owners</h1>
+					<p className="text-sm text-gray-500 mt-1">
+						Manage client records for property owners only.
+					</p>
+				</div>
+
+				<Button variant="primary" onClick={handleAddClick}>
+					+ Add Property Owner
+				</Button>
+			</div>
+
+			<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+				<div className="bg-white border border-gray-200 rounded-xl p-4">
+					<p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Total Owners</p>
+					<p className="text-2xl font-bold text-gray-900 mt-1">{summary.total}</p>
+				</div>
+				<div className="bg-white border border-gray-200 rounded-xl p-4">
+					<p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">With Email</p>
+					<p className="text-2xl font-bold text-blue-700 mt-1">{summary.withEmail}</p>
+				</div>
+				<div className="bg-white border border-gray-200 rounded-xl p-4">
+					<p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">With Telephone</p>
+					<p className="text-2xl font-bold text-green-700 mt-1">{summary.withPhone}</p>
+				</div>
+			</div>
+
+			{loadError && (
+				<div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">
+					{loadError}
+				</div>
+			)}
+
+			<DataTable
+				columns={tableColumns}
+				data={owners}
+				keyField="client_no"
+				isLoading={isLoading}
+				emptyMessage="No property owners found."
+				onRowClick={handleEditClick}
+				actions={renderActions}
+			/>
+
+			<OwnerFormModal
+				isOpen={isFormOpen}
+				onClose={() => setIsFormOpen(false)}
+				onSuccess={loadOwners}
+				ownerToEdit={ownerToEdit}
+			/>
+
+			<ConfirmDeleteModal
+				isOpen={isDeleteOpen}
+				onClose={() => setIsDeleteOpen(false)}
+				onSuccess={loadOwners}
+				endpoint="/users/client"
+				idToDelete={ownerToDelete?.client_no}
+				itemName={`${ownerToDelete?.first_name || ''} ${ownerToDelete?.last_name || ''}`.trim() || ownerToDelete?.client_no}
+			/>
+		</div>
+	);
 }
