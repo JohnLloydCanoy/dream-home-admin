@@ -48,6 +48,14 @@ const FormField = ({
                     >
                         {children}
                     </select>
+                ) : type === "textarea" ? (
+                    <textarea
+                        id={inputId}
+                        value={value || ""}
+                        onChange={(e) => onChange(field, e.target.value)}
+                        className={`${baseInputClasses} min-h-28 resize-y`}
+                        placeholder={placeholder}
+                    />
                 ) : (
                     <input 
                         id={inputId}
