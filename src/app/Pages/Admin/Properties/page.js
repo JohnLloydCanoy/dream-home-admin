@@ -99,7 +99,7 @@ export default function PropertiesPage() {
             }
         },
         {
-            key: 'owner',
+            key: 'owner_no',
             label: 'Owner',
             render: (val) => {
                 if (!val) return 'N/A';
@@ -111,7 +111,7 @@ export default function PropertiesPage() {
             }
         },
         {
-            key: 'branch',
+            key: 'branch_no',
             label: 'Branch',
             render: (val) => {
                 if (!val) return 'N/A';

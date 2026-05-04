@@ -127,7 +127,7 @@ export default function PropertyAssignmentsPage() {
             )
         },
         {
-            key: 'owner',
+            key: 'owner_no',
             label: 'Owner',
             render: (value) => (
                 <span className={value ? 'text-gray-900 font-medium' : 'text-gray-400 italic'}>
@@ -136,7 +136,7 @@ export default function PropertyAssignmentsPage() {
             )
         },
         {
-            key: 'branch',
+            key: 'branch_no',
             label: 'Branch',
             render: (value) => (
                 <span className={value ? 'text-gray-900 font-medium' : 'text-gray-400 italic'}>
