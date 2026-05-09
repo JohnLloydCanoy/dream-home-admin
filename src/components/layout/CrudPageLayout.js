@@ -14,7 +14,11 @@ export default function CrudPageLayout({
     columns,
     renderFormModal,
     getDeleteModalItemName,
-    renderTopContent 
+    renderTopContent,
+    // New Optional Props for Advanced Pages
+    fetchData,
+    customActions,
+    onRowClick
 }) {
     // Shared Data State
     const [dataList, setDataList] = useState([]);
@@ -30,16 +34,20 @@ export default function CrudPageLayout({
     const loadData = async () => {
         setIsLoading(true);
         try {
-            const data = await apiClient(endpoint);
-            setDataList(data.results || data.items || data || []);
+            // Use custom fetch if provided, otherwise fallback to standard endpoint
+            const data = fetchData ? await fetchData() : await apiClient(endpoint);
+            setDataList(data?.results || data?.items || data || []);
         } catch (error) {
-            console.error(`Failed to load data from ${endpoint}:`, error);
+            console.error(`Failed to load data:`, error);
         } finally {
             setIsLoading(false);
         }
     };
 
-    useEffect(() => { loadData(); }, [endpoint]);
+    useEffect(() => { 
+        loadData(); 
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [endpoint]);
 
     // Action Handlers
     const handleAddClick = () => {
@@ -69,9 +77,14 @@ export default function CrudPageLayout({
         </div>
     );
 
+    // Determine which actions to show
+    const actionsToRender = customActions 
+        ? (row) => customActions(row, handleEditClick, handleDeleteClick)
+        : renderActions;
+
     return (
-        <div className="w-full max-w-7xl mx-auto">
-            <div className="mb-8 flex justify-between items-end">
+        <div className="w-full max-w-7xl mx-auto space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
                     <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
@@ -89,11 +102,12 @@ export default function CrudPageLayout({
                 data={dataList} 
                 keyField={keyField}
                 isLoading={isLoading}
-                actions={renderActions}
+                actions={actionsToRender}
+                onRowClick={onRowClick}
             />
 
             {/* Render Prop for Custom Form Modal */}
-            {renderFormModal({
+            {renderFormModal && renderFormModal({
                 isOpen: isFormOpen,
                 onClose: () => setIsFormOpen(false),
                 onSuccess: loadData,
@@ -107,7 +121,7 @@ export default function CrudPageLayout({
                 onSuccess={loadData}
                 endpoint={endpoint}
                 idToDelete={itemToDelete?.[keyField]}
-                itemName={itemToDelete ? getDeleteModalItemName(itemToDelete) : ''}
+                itemName={itemToDelete && getDeleteModalItemName ? getDeleteModalItemName(itemToDelete) : ''}
             />
         </div>
     );
