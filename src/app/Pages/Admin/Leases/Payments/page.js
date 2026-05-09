@@ -1,114 +1,43 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
-import DataTable from '@/components/ui/DataTable';
-import Button from '@components/ui/Button';
+import React, { useState } from 'react';
+import CrudPageLayout from '@/components/layout/CrudPageLayout';
+import Button from '../../../../../../global-components/ui/Button';
 import PaymentModal from '@/components/ui/PaymentModal';
 import apiClient from '@/lib/apiClient';
 
+// --- Helper Functions ---
 const normalizeList = (data) => data?.results || data?.items || data || [];
+const toLeaseNo = (lease) => (typeof lease === 'object' ? lease?.lease_no || lease?.id : lease) || '';
+const getRenterLabel = (renter) => typeof renter === 'object' ? `${renter.first_name || ''} ${renter.last_name || ''}`.trim() + ` (${renter.client_no || renter.id || 'N/A'})` : (renter || 'N/A');
+const getPropertyLabel = (property) => typeof property === 'object' ? `${property.property_no || property.id} - ${[property.street, property.city].filter(Boolean).join(', ')}` : (property || 'N/A');
+const formatCurrency = (value) => Number.isNaN(Number(value)) ? (value || 'N/A') : `₱${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const getPaymentLeaseNo = (payment) => toLeaseNo(payment?.lease);
+const getLatestDate = (current, candidate) => (!candidate ? current : !current ? candidate : (candidate > current ? candidate : current));
 
-const toLeaseNo = (lease) => {
-    if (!lease) return '';
-    if (typeof lease === 'object') return lease.lease_no || lease.id || '';
-    return lease;
-};
-
-const getRenterLabel = (renter) => {
-    if (!renter) return 'N/A';
-    if (typeof renter === 'object') {
-        const fullName = `${renter.first_name || ''} ${renter.last_name || ''}`.trim();
-        const renterId = renter.client_no || renter.id || 'N/A';
-        return `${fullName || 'Unknown Renter'} (${renterId})`;
-    }
-    return renter;
-};
-
-const getPropertyLabel = (property) => {
-    if (!property) return 'N/A';
-    if (typeof property === 'object') {
-        const propertyNo = property.property_no || property.id || 'N/A';
-        const location = [property.street, property.city].filter(Boolean).join(', ');
-        return location ? `${propertyNo} - ${location}` : `${propertyNo}`;
-    }
-    return property;
-};
-
-const formatCurrency = (value) => {
-    if (value === null || value === undefined || value === '') return 'N/A';
-
-    const amount = Number(value);
-    if (Number.isNaN(amount)) return value;
-
-    return `₱${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-};
-
-const getPaymentLeaseNo = (payment) => {
-    if (!payment) return '';
-    if (typeof payment.lease === 'object') return payment.lease.lease_no || payment.lease.id || '';
-    return payment.lease || '';
-};
-
-const getLatestDate = (current, candidate) => {
-    if (!candidate) return current;
-    if (!current) return candidate;
-    return candidate > current ? candidate : current;
-};
-
+// --- Main Component ---
 export default function PaymentsBalancesPage() {
-    const [leases, setLeases] = useState([]);
-    const [payments, setPayments] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [loadError, setLoadError] = useState('');
-
-    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [selectedLease, setSelectedLease] = useState(null);
 
-    const loadData = async () => {
-        setIsLoading(true);
-        setLoadError('');
+    // 🌟 Custom Fetch Logic: Merges Leases and Payments into one array for the table
+    const fetchLedgerData = async () => {
+        const [leaseData, paymentData] = await Promise.all([
+            apiClient('/leases/'),
+            apiClient('/payments/')
+        ]);
 
-        try {
-            const [leaseData, paymentData] = await Promise.all([
-                apiClient('/leases/'),
-                apiClient('/payments/')
-            ]);
-
-            setLeases(normalizeList(leaseData));
-            setPayments(normalizeList(paymentData));
-        } catch (error) {
-            console.error('Failed to load payments and balances data:', error);
-            setLoadError('Unable to load payment ledger and balances right now.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    const leaseBalances = useMemo(() => {
+        const leases = normalizeList(leaseData);
+        const payments = normalizeList(paymentData);
         const paidByLease = {};
 
         payments.forEach((payment) => {
-            const leaseNo = toLeaseNo(getPaymentLeaseNo(payment));
+            const leaseNo = getPaymentLeaseNo(payment);
             if (!leaseNo) return;
-
-            if (!paidByLease[leaseNo]) {
-                paidByLease[leaseNo] = {
-                    amountPaid: 0,
-                    paymentCount: 0,
-                    lastPaymentDate: null
-                };
-            }
-
+            if (!paidByLease[leaseNo]) paidByLease[leaseNo] = { amountPaid: 0, paymentCount: 0, lastPaymentDate: null };
+            
             paidByLease[leaseNo].amountPaid += Number(payment.amount_paid) || 0;
             paidByLease[leaseNo].paymentCount += 1;
-            paidByLease[leaseNo].lastPaymentDate = getLatestDate(
-                paidByLease[leaseNo].lastPaymentDate,
-                payment.payment_date
-            );
+            paidByLease[leaseNo].lastPaymentDate = getLatestDate(paidByLease[leaseNo].lastPaymentDate, payment.payment_date);
         });
 
         return leases.map((lease) => {
@@ -126,158 +55,86 @@ export default function PaymentsBalancesPage() {
                 last_payment_date: leasePayment.lastPaymentDate || 'No payment yet'
             };
         });
-    }, [leases, payments]);
-
-    const summary = useMemo(() => {
-        const totalRentDue = leaseBalances.reduce((sum, lease) => sum + lease.rent_due, 0);
-        const totalPaid = leaseBalances.reduce((sum, lease) => sum + lease.paid_so_far, 0);
-        const totalOutstanding = leaseBalances.reduce((sum, lease) => sum + lease.outstanding_balance, 0);
-
-        return {
-            totalLeases: leaseBalances.length,
-            totalRentDue,
-            totalPaid,
-            totalOutstanding
-        };
-    }, [leaseBalances]);
-
-    const openPaymentModal = (lease = selectedLease) => {
-        setSelectedLease(lease || null);
-        setIsPaymentModalOpen(true);
-    };
-
-    const closePaymentModal = () => {
-        setIsPaymentModalOpen(false);
     };
 
     const tableColumns = [
-        {
-            key: 'lease_no',
-            label: 'Lease No',
-            render: (value) => (
-                <span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded text-xs">
-                    {value}
-                </span>
-            )
-        },
-        {
-            key: 'renter',
-            label: 'Renter',
-            render: (value) => getRenterLabel(value)
-        },
-        {
-            key: 'property',
-            label: 'Property',
-            render: (value) => getPropertyLabel(value)
-        },
-        {
-            key: 'rent_due',
-            label: 'Total Rent Due',
-            render: (value) => formatCurrency(value)
-        },
-        {
-            key: 'paid_so_far',
-            label: 'Amount Paid So Far',
-            render: (value) => (
-                <span className="font-medium text-green-700">{formatCurrency(value)}</span>
-            )
-        },
-        {
-            key: 'outstanding_balance',
-            label: 'Balance',
-            render: (value) => (
-                <span className={`font-semibold ${value > 0 ? 'text-red-700' : 'text-green-700'}`}>
-                    {formatCurrency(value)}
-                </span>
-            )
-        },
-        {
-            key: 'last_payment_date',
-            label: 'Last Payment',
-            render: (value) => value || 'No payment yet'
-        }
+        { key: 'lease_no', label: 'Lease No', render: (val) => <span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded text-xs">{val}</span> },
+        { key: 'renter', label: 'Renter', render: getRenterLabel },
+        { key: 'property', label: 'Property', render: getPropertyLabel },
+        { key: 'rent_due', label: 'Total Rent Due', render: formatCurrency },
+        { key: 'paid_so_far', label: 'Amount Paid So Far', render: (val) => <span className="font-medium text-green-700">{formatCurrency(val)}</span> },
+        { key: 'outstanding_balance', label: 'Balance', render: (val) => <span className={`font-semibold ${val > 0 ? 'text-red-700' : 'text-green-700'}`}>{formatCurrency(val)}</span> },
+        { key: 'last_payment_date', label: 'Last Payment', render: (val) => val || 'No payment yet' }
     ];
 
-    const renderActions = (row) => (
-        <Button
-            variant="secondary"
-            size="sm"
-            onClick={(event) => {
-                event.stopPropagation();
-                openPaymentModal(row);
-            }}
-        >
-            Log Payment
-        </Button>
-    );
-
     return (
-        <div className="w-full max-w-7xl mx-auto space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Payments & Balances</h1>
-                    <p className="text-sm text-gray-500 mt-1">
-                        Log rental payments and monitor outstanding balances per lease agreement.
-                    </p>
-                </div>
-
-                <div className="flex gap-2">
-                    <Button variant="secondary" onClick={loadData}>
-                        Refresh
-                    </Button>
-                    <Button variant="primary" onClick={() => openPaymentModal()}>
-                        + Log Payment
-                    </Button>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                <div className="bg-white border border-gray-200 rounded-xl p-4">
-                    <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Tracked Leases</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">{summary.totalLeases}</p>
-                </div>
-                <div className="bg-white border border-gray-200 rounded-xl p-4">
-                    <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Total Rent Due</p>
-                    <p className="text-2xl font-bold text-blue-700 mt-1">{formatCurrency(summary.totalRentDue)}</p>
-                </div>
-                <div className="bg-white border border-gray-200 rounded-xl p-4">
-                    <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Total Paid</p>
-                    <p className="text-2xl font-bold text-green-700 mt-1">{formatCurrency(summary.totalPaid)}</p>
-                </div>
-                <div className="bg-white border border-gray-200 rounded-xl p-4">
-                    <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Outstanding</p>
-                    <p className="text-2xl font-bold text-red-700 mt-1">{formatCurrency(summary.totalOutstanding)}</p>
-                </div>
-            </div>
-
-            {selectedLease && (
-                <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-lg p-3 text-sm">
-                    Selected Lease: <strong>{selectedLease.lease_no}</strong> ({getRenterLabel(selectedLease.renter)})
-                </div>
+        <CrudPageLayout
+            title="Payments & Balances"
+            subtitle="Log rental payments and monitor outstanding balances per lease agreement."
+            addButtonLabel="+ Log Payment"
+            keyField="lease_no"
+            columns={tableColumns}
+            fetchData={fetchLedgerData} // 👈 Pass our custom merger function
+            onRowClick={setSelectedLease} // 👈 Tracks row selection for the banner
+            
+            // 🌟 Override standard Edit/Delete with custom "Log Payment" button
+            customActions={(row, handleEditClick) => (
+                <Button variant="secondary" size="sm" onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedLease(row); // Update our banner state
+                    handleEditClick(row);  // Triggers the layout's modal state
+                }}>
+                    Log Payment
+                </Button>
             )}
 
-            {loadError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">
-                    {loadError}
-                </div>
+            // 🌟 Custom Top UI Grid & Selection Banner
+            renderTopContent={(leaseBalances) => {
+                const summary = {
+                    totalRentDue: leaseBalances.reduce((sum, l) => sum + l.rent_due, 0),
+                    totalPaid: leaseBalances.reduce((sum, l) => sum + l.paid_so_far, 0),
+                    totalOutstanding: leaseBalances.reduce((sum, l) => sum + l.outstanding_balance, 0),
+                };
+
+                return (
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                            <div className="bg-white border border-gray-200 rounded-xl p-4">
+                                <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Tracked Leases</p>
+                                <p className="text-2xl font-bold text-gray-900 mt-1">{leaseBalances.length}</p>
+                            </div>
+                            <div className="bg-white border border-gray-200 rounded-xl p-4">
+                                <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Total Rent Due</p>
+                                <p className="text-2xl font-bold text-blue-700 mt-1">{formatCurrency(summary.totalRentDue)}</p>
+                            </div>
+                            <div className="bg-white border border-gray-200 rounded-xl p-4">
+                                <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Total Paid</p>
+                                <p className="text-2xl font-bold text-green-700 mt-1">{formatCurrency(summary.totalPaid)}</p>
+                            </div>
+                            <div className="bg-white border border-gray-200 rounded-xl p-4">
+                                <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Outstanding</p>
+                                <p className="text-2xl font-bold text-red-700 mt-1">{formatCurrency(summary.totalOutstanding)}</p>
+                            </div>
+                        </div>
+
+                        {selectedLease && (
+                            <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-lg p-3 text-sm mb-4">
+                                Selected Lease: <strong>{selectedLease.lease_no}</strong> ({getRenterLabel(selectedLease.renter)})
+                            </div>
+                        )}
+                    </>
+                );
+            }}
+
+            // 🌟 Inject PaymentModal instead of a standard FormModal
+            renderFormModal={({ isOpen, onClose, onSuccess, itemToEdit }) => (
+                <PaymentModal
+                    isOpen={isOpen}
+                    onClose={onClose}
+                    onSuccess={onSuccess}
+                    preselectedLease={itemToEdit || selectedLease} // Uses layout's active item
+                />
             )}
-
-            <DataTable
-                columns={tableColumns}
-                data={leaseBalances}
-                keyField="lease_no"
-                isLoading={isLoading}
-                emptyMessage="No lease agreements available for payment tracking."
-                onRowClick={setSelectedLease}
-                actions={renderActions}
-            />
-
-            <PaymentModal
-                isOpen={isPaymentModalOpen}
-                onClose={closePaymentModal}
-                onSuccess={loadData}
-                preselectedLease={selectedLease}
-            />
-        </div>
+        />
     );
 }
