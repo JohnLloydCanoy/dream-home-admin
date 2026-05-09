@@ -6,10 +6,55 @@ import Dialog from '../../../global-components/ui/Dialog';
 import apiClient from '@/lib/apiClient';
 import { useForm } from '@/hooks/useForm';
 import { useCreate, useUpdate } from '@/hooks/useCrud';
-import { validateForm, staffValidators } from '@/lib/validator';
+import { staffValidators } from '@/lib/validator';
 import FormField from './FormField';
 
+const positionOptions = [
+    { value: 'Staff', label: 'Standard Staff' },
+    { value: 'Manager', label: 'Manager' },
+    { value: 'Supervisor', label: 'Supervisor' },
+    { value: 'Secretary', label: 'Secretary' }
+];
 
+const coreFields = [
+    { label: 'First Name', field: 'first_name' },
+    { label: 'Last Name', field: 'last_name' },
+    { label: 'Middle Name', field: 'middle_name' },
+    { label: 'Suffix', field: 'suffix' },
+    { label: 'Email', field: 'email', type: 'email' },
+    {
+        label: 'Password',
+        field: 'password',
+        type: 'password',
+        placeholder: 'Leave blank for default: dreamhome2026',
+        required: false
+    },
+    { label: 'Telephone', field: 'telephone_no' },
+    { label: 'Address', field: 'address', className: 'col-span-2' },
+    {
+        label: 'Gender',
+        field: 'sex',
+        type: 'select',
+        options: [
+            { value: '', label: '— Select —' },
+            { value: 'M', label: 'Male' },
+            { value: 'F', label: 'Female' }
+        ]
+    },
+    { label: 'Date of Birth', field: 'dob', type: 'date' },
+    { label: 'National Insurance No.', field: 'nin' },
+    { label: 'Date Joined', field: 'date_joined', type: 'date' }
+];
+
+const nextOfKinFields = [
+    { label: 'First Name', field: 'nok_first_name' },
+    { label: 'Last Name', field: 'nok_last_name' },
+    { label: 'Middle Name', field: 'nok_middle_name' },
+    { label: 'Suffix', field: 'nok_suffix' },
+    { label: 'Relationship', field: 'nok_relationship' },
+    { label: 'Address', field: 'nok_address' },
+    { label: 'Telephone No.', field: 'nok_telephone_no' }
+];
 
 export default function StaffFormModal({ isOpen, onClose, onSuccess, staffToEdit }) {
     const isEditMode = Boolean(staffToEdit);
@@ -22,6 +67,7 @@ export default function StaffFormModal({ isOpen, onClose, onSuccess, staffToEdit
 
     const isSaving = isCreating || isUpdating;
     const submitError = isEditMode ? updateError : createError;
+
 
     // Fetch dropdown options
     useEffect(() => {
@@ -39,6 +85,8 @@ export default function StaffFormModal({ isOpen, onClose, onSuccess, staffToEdit
     const { formData, errors, handleChange, validate, reset } = useForm({
         first_name: staffToEdit?.first_name || '',
         last_name: staffToEdit?.last_name || '',
+        middle_name: staffToEdit?.middle_name || '',
+        suffix: staffToEdit?.suffix || '',
         email: staffToEdit?.email || '',
         password: '',
         sex: staffToEdit?.sex || '',
@@ -59,11 +107,36 @@ export default function StaffFormModal({ isOpen, onClose, onSuccess, staffToEdit
         car_allowance: staffToEdit?.car_allowance || '',
 
         // Next of Kin Fields
-        nok_full_name: staffToEdit?.next_of_kin?.full_name || '',
+        nok_first_name: staffToEdit?.next_of_kin?.first_name || '',
+        nok_last_name: staffToEdit?.next_of_kin?.last_name || '',
+        nok_middle_name: staffToEdit?.next_of_kin?.middle_name || '',
+        nok_suffix: staffToEdit?.next_of_kin?.suffix || '',
         nok_relationship: staffToEdit?.next_of_kin?.relationship || '',
         nok_address: staffToEdit?.next_of_kin?.address || '',
         nok_telephone_no: staffToEdit?.next_of_kin?.telephone_no || ''
     }, staffValidators);
+
+    const supervisors = staffList.filter(s => s.position === 'Supervisor');
+    const renderField = (config) => (
+        <FormField
+            key={config.field}
+            label={config.label}
+            field={config.field}
+            type={config.type}
+            value={formData[config.field]}
+            onChange={handleChange}
+            error={errors[config.field]}
+            placeholder={config.placeholder}
+            required={config.required}
+            className={config.className}
+        >
+            {config.options?.map(option => (
+                <option key={`${config.field}-${option.value}`} value={option.value}>
+                    {option.label}
+                </option>
+            ))}
+        </FormField>
+    );
 
     useEffect(() => {
         if (isOpen) reset();
@@ -80,7 +153,10 @@ export default function StaffFormModal({ isOpen, onClose, onSuccess, staffToEdit
             branch: formData.branch || null,
             // Re-nest Next of Kin for the Django OneToOne field
             next_of_kin: {
-                full_name: formData.nok_full_name,
+                first_name: formData.nok_first_name,
+                last_name: formData.nok_last_name,
+                middle_name: formData.nok_middle_name,
+                suffix: formData.nok_suffix,
                 relationship: formData.nok_relationship,
                 address: formData.nok_address,
                 telephone_no: formData.nok_telephone_no
@@ -122,20 +198,7 @@ export default function StaffFormModal({ isOpen, onClose, onSuccess, staffToEdit
                 <div>
                     <h3 className="text-sm font-bold text-blue-900 border-b pb-2 mb-3">Core Details</h3>
                     <div className="grid grid-cols-2 gap-4">
-                        <FormField label="First Name" field="first_name" value={formData.first_name} onChange={handleChange} error={errors.first_name} />
-                        <FormField label="Last Name" field="last_name" value={formData.last_name} onChange={handleChange} error={errors.last_name} />
-                        <FormField label="Email" field="email" type="email" value={formData.email} onChange={handleChange} error={errors.email} />
-                        <FormField label="Password" field="password" type="password" value={formData.password} onChange={handleChange} error={errors.password} placeholder="Leave blank for default: dreamhome2026" required={false} />
-                        <FormField label="Telephone" field="telephone_no" value={formData.telephone_no} onChange={handleChange} error={errors.telephone_no} />
-                        <FormField label="Address" field="address" value={formData.address} onChange={handleChange} error={errors.address} className="col-span-2" />
-                        <FormField label="Gender" field="sex" type="select" value={formData.sex} onChange={handleChange} error={errors.sex}>
-                            <option value="">— Select —</option>
-                            <option value="M">Male</option>
-                            <option value="F">Female</option>
-                        </FormField>
-                        <FormField label="Date of Birth" field="dob" type="date" value={formData.dob} onChange={handleChange} error={errors.dob} />
-                        <FormField label="National Insurance No." field="nin" value={formData.nin} onChange={handleChange} error={errors.nin} />
-                        <FormField label="Date Joined" field="date_joined" type="date" value={formData.date_joined} onChange={handleChange} error={errors.date_joined} />
+                        {coreFields.map(renderField)}
                     </div>
                 </div>
 
@@ -144,19 +207,28 @@ export default function StaffFormModal({ isOpen, onClose, onSuccess, staffToEdit
                     <h3 className="text-sm font-bold text-blue-900 border-b pb-2 mb-3">Employment</h3>
                     <div className="grid grid-cols-2 gap-4">
                         <FormField label="Position" field="position" type="select" value={formData.position} onChange={handleChange} error={errors.position}>
-                            <option value="Staff">Standard Staff</option>
-                            <option value="Manager">Manager</option>
-                            <option value="Supervisor">Supervisor</option>
-                            <option value="Secretary">Secretary</option>
+                            {positionOptions.map(option => (
+                                <option key={`position-${option.value}`} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
                         </FormField>
                         <FormField label="Salary" field="salary" type="number" value={formData.salary} onChange={handleChange} error={errors.salary} />
                         <FormField label="Branch" field="branch" type="select" value={formData.branch} onChange={handleChange} error={errors.branch}>
                             <option value="">— Select Branch —</option>
-                            {branches.map(b => <option key={b.branch_no} value={b.branch_no}>{b.city}</option>)}
+                            {branches.map(b => (
+                                <option key={b.branch_no} value={b.branch_no}>
+                                    {b.city}
+                                </option>
+                            ))}
                         </FormField>
                         <FormField label="Supervisor" field="supervisor" type="select" value={formData.supervisor} onChange={handleChange} error={errors.supervisor} required={false}>
                             <option value="">— None —</option>
-                            {staffList.filter(s => s.position === 'Supervisor').map(s => <option key={s.staff_no} value={s.staff_no}>{s.first_name} {s.last_name}</option>)}
+                            {supervisors.map(s => (
+                                <option key={s.staff_no} value={s.staff_no}>
+                                    {s.first_name} {s.last_name}
+                                </option>
+                            ))}
                         </FormField>
                     </div>
                 </div>
@@ -180,10 +252,7 @@ export default function StaffFormModal({ isOpen, onClose, onSuccess, staffToEdit
                 <div>
                     <h3 className="text-sm font-bold text-blue-900 border-b pb-2 mb-3">Next of Kin</h3>
                     <div className="grid grid-cols-2 gap-4">
-                        <FormField label="Full Name" field="nok_full_name" value={formData.nok_full_name} onChange={handleChange} required={false} />
-                        <FormField label="Relationship" field="nok_relationship" value={formData.nok_relationship} onChange={handleChange} required={false} />
-                        <FormField label="Address" field="nok_address" value={formData.nok_address} onChange={handleChange} required={false} />
-                        <FormField label="Telephone No." field="nok_telephone_no" value={formData.nok_telephone_no} onChange={handleChange} required={false} />
+                        {nextOfKinFields.map((config) => renderField({ ...config, required: false }))}
                     </div>
                 </div>
 
