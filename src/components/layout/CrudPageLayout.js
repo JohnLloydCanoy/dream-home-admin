@@ -14,6 +14,7 @@ export default function CrudPageLayout({
     columns,
     renderFormModal,
     getDeleteModalItemName,
+    renderTopContent 
 }) {
     // Shared Data State
     const [dataList, setDataList] = useState([]);
@@ -79,6 +80,9 @@ export default function CrudPageLayout({
                     {addButtonLabel}
                 </button>
             </div>
+
+            {/* Inject custom top content (like summary cards) here, passing the dataList */}
+            {renderTopContent && renderTopContent(dataList)}
 
             <DataTable 
                 columns={columns} 
