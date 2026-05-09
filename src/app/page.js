@@ -11,13 +11,13 @@ export default function Home() {
     staffId: "",
     password: "",
   });
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
-    if (error) setError(""); 
+    if (error) setError("");
   };
 
   const handleSubmit = async (e) => {
@@ -29,15 +29,13 @@ export default function Home() {
       const result = await loginAdmin(credentials.staffId, credentials.password);
       const userRole = result.role?.toUpperCase();
 
-      if (userRole === "ADMIN") {
-        router.push("/Pages/Admin"); 
-      } 
-      else if (userRole === "STAFF") {
-        router.push("/Pages/Staff");
-      } 
-      else {
-        setError("Access Denied: Unauthorized portal.");
-        logoutAdmin(); 
+      const staffRoles = ["ADMIN", "MANAGER", "SUPERVISOR", "STAFF", "SECRETARY"];
+
+      if (staffRoles.includes(userRole)) {
+        router.push("/Pages/Admin");
+      } else {
+        setError("Access Denied: This portal is for staff only.");
+        logoutAdmin();
       }
 
     } catch (err) {
@@ -50,7 +48,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#f0f2f5] flex items-center justify-center p-6 font-sans">
       <div className="max-w-[1000px] w-full grid lg:grid-cols-2 gap-10 items-center">
-        
+
         {/* Left Side: Branding */}
         <div className="hidden lg:flex flex-col pr-8 pb-16">
           <div className="flex items-center gap-3 mb-4">
@@ -67,7 +65,7 @@ export default function Home() {
         <div className="w-full max-w-[400px] mx-auto lg:mx-0 lg:ml-auto">
           <div className="bg-white p-4 shadow-xl rounded-xl border border-gray-100">
             <form onSubmit={handleSubmit} className="space-y-4">
-              
+
               {/* Error Message Display */}
               {error && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm font-medium">
@@ -86,7 +84,7 @@ export default function Home() {
                   required
                 />
               </div>
-              
+
               <div>
                 <input
                   type="password"

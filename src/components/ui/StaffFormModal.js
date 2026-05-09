@@ -40,6 +40,7 @@ export default function StaffFormModal({ isOpen, onClose, onSuccess, staffToEdit
         first_name: staffToEdit?.first_name || '',
         last_name: staffToEdit?.last_name || '',
         email: staffToEdit?.email || '',
+        password: '',
         sex: staffToEdit?.sex || '',
         dob: staffToEdit?.dob || '',
         address: staffToEdit?.address || '',
@@ -124,6 +125,7 @@ export default function StaffFormModal({ isOpen, onClose, onSuccess, staffToEdit
                         <FormField label="First Name" field="first_name" value={formData.first_name} onChange={handleChange} error={errors.first_name} />
                         <FormField label="Last Name" field="last_name" value={formData.last_name} onChange={handleChange} error={errors.last_name} />
                         <FormField label="Email" field="email" type="email" value={formData.email} onChange={handleChange} error={errors.email} />
+                        <FormField label="Password" field="password" type="password" value={formData.password} onChange={handleChange} error={errors.password} placeholder="Leave blank for default: dreamhome2026" required={false} />
                         <FormField label="Telephone" field="telephone_no" value={formData.telephone_no} onChange={handleChange} error={errors.telephone_no} />
                         <FormField label="Address" field="address" value={formData.address} onChange={handleChange} error={errors.address} className="col-span-2" />
                         <FormField label="Gender" field="sex" type="select" value={formData.sex} onChange={handleChange} error={errors.sex}>
