@@ -47,7 +47,7 @@ export default function StaffDirectoryPage() {
     // Table Configuration
     const tableColumns = [
         { 
-            key: 'staff_no', label: 'Staff ID',
+            key: 'staff_no', label: 'Staff No.',
             render: (val) => <span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">{val}</span> 
         },
         { 
@@ -55,7 +55,7 @@ export default function StaffDirectoryPage() {
             render: (val, row) => <span className="font-medium text-gray-900">{row.first_name} {row.last_name}</span>
         },
         { 
-            key: 'position', label: 'Role',
+            key: 'position', label: 'Position',
             render: (val) => {
                 const colors = {
                     'Manager': 'bg-green-100 text-green-800',
