@@ -53,16 +53,14 @@ export default function BranchesPage() {
     // Table Configuration
     const tableColumns = [
         { 
-            key: 'branch_no', label: 'Branch ID',
+            key: 'branch_no', label: 'Branch No.',
             render: (val) => <span className="font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">{val}</span> 
         },
-        { key: 'area', label: 'Barangay' },
-        { key: 'city', label: 'City' },
         { 
             key: 'address', label: 'Full Address',
             render: (val, row) => (
                 <div className="text-xs text-gray-500">
-                    <p className="text-gray-900 font-medium">{row.street}</p>
+                    <p className="text-gray-900 font-medium">{row.street}, {row.area}, {row.city}</p>
                     <p>{row.postcode}</p>
                 </div>
             )
@@ -78,6 +76,8 @@ export default function BranchesPage() {
                 </span>
             )
         },
+
+
     ];
 
 
