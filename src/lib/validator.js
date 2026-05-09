@@ -49,6 +49,8 @@ export const branchValidators = {
 export const staffValidators = {
     first_name:   { required: true, maxLength: 100, label: 'First Name' },
     last_name:    { required: true, maxLength: 100, label: 'Last Name' },
+    middle_name:  { maxLength: 100, label: 'Middle Name' },
+    suffix:       { maxLength: 10, label: 'Suffix' },
     email:        { 
         required: true, 
         maxLength: 255, 
