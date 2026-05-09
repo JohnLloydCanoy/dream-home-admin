@@ -1,55 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import DataTable from '@/components/ui/DataTable';
+import React from 'react';
+import CrudPageLayout from '@/components/layout/CrudPageLayout';
 import PropertyFormModal from '@/components/ui/PropertyFormModal';
-import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal';
-import apiClient from '@/lib/apiClient';
 
 export default function PropertiesPage() {
-    // Data State
-    const [properties, setProperties] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    // Modal States
-    const [isFormOpen, setIsFormOpen] = useState(false);
-    const [propertyToEdit, setPropertyToEdit] = useState(null);
-    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-    const [propertyToDelete, setPropertyToDelete] = useState(null);
-
-    // Fetch Function (extracted so we can call it after adding/editing/deleting)
-    const loadProperties = async () => {
-        setIsLoading(true);
-        try {
-            const data = await apiClient('/properties/');
-            setProperties(data.results || data.items || data);
-        } catch (error) {
-            console.error('Failed to load properties:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    // Load initially
-    useEffect(() => { loadProperties(); }, []);
-
-    // Open Modals
-    const handleAddClick = () => {
-        setPropertyToEdit(null);
-        setIsFormOpen(true);
-    };
-
-    const handleEditClick = (property) => {
-        setPropertyToEdit(property);
-        setIsFormOpen(true);
-    };
-
-    const handleDeleteClick = (property) => {
-        setPropertyToDelete(property);
-        setIsDeleteOpen(true);
-    };
-
-    // Table Configuration
     const tableColumns = [
         {
             key: 'property_no', label: 'Property ID',
@@ -123,58 +78,23 @@ export default function PropertiesPage() {
         }
     ];
 
-    const renderActions = (row) => (
-        <div className="flex justify-end gap-3">
-            <button 
-                onClick={(e) => { e.stopPropagation(); handleEditClick(row); }}
-                className="text-blue-600 hover:text-blue-900 text-sm font-semibold"
-            >
-                Edit
-            </button>
-            <button 
-                onClick={(e) => { e.stopPropagation(); handleDeleteClick(row); }}
-                className="text-red-600 hover:text-red-900 text-sm font-semibold"
-            >
-                Delete
-            </button>
-        </div>
-    );
-
     return (
-        <div className=" w-full max-w-7xl mx-auto">
-            <div className="mb-8 flex justify-between items-end">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Property Operations</h1>
-                    <p className="text-sm text-gray-500 mt-1">Manage DreamHome rental properties and listing assignments.</p>
-                </div>
-                <button onClick={handleAddClick} className="bg-[#002147] hover:bg-blue-900 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-sm">
-                    + New Property
-                </button>
-            </div>
-
-            <DataTable 
-                columns={tableColumns} 
-                data={properties} 
-                keyField="property_no"
-                isLoading={isLoading}
-                actions={renderActions}
-            />
-
-            <PropertyFormModal
-                isOpen={isFormOpen}
-                onClose={() => setIsFormOpen(false)}
-                onSuccess={loadProperties}
-                propertyToEdit={propertyToEdit}
-            />
-
-            <ConfirmDeleteModal
-                isOpen={isDeleteOpen}
-                onClose={() => setIsDeleteOpen(false)}
-                onSuccess={loadProperties}
-                endpoint="/properties"
-                idToDelete={propertyToDelete?.property_no}
-                itemName={`Property ${propertyToDelete?.property_no} - ${propertyToDelete?.city}`}
-            />
-        </div>
+        <CrudPageLayout
+            title="Property Operations"
+            subtitle="Manage DreamHome rental properties and listing assignments."
+            addButtonLabel="+ New Property"
+            endpoint="/properties/"
+            keyField="property_no"
+            columns={tableColumns}
+            getDeleteModalItemName={(property) => `Property ${property.property_no} - ${property.city}`}
+            renderFormModal={({ isOpen, onClose, onSuccess, itemToEdit }) => (
+                <PropertyFormModal
+                    isOpen={isOpen}
+                    onClose={onClose}
+                    onSuccess={onSuccess}
+                    propertyToEdit={itemToEdit}
+                />
+            )}
+        />
     );
 }
