@@ -19,27 +19,7 @@ const FormSection = ({ title, description, children }) => (
     <section className={sectionTheme.wrapper}>
         <h3 className={sectionTheme.heading}>{title}</h3>
         {description && <p className={sectionTheme.description}>{description}</p>}
-        <div className="mt-4">{children}</div>
-    </section>
-);
-
-export default function ClientAssignmentModal({
-    isOpen,
-    onClose,
-    onSuccess,
-    clientToAssign
-}) {
-    const [staffOptions, setStaffOptions] = useState([]);
-    const [loadError, setLoadError] = useState('');
-
-    const { updateRecord, isLoading: isSaving, error: submitError, setError: setSubmitError } = useUpdate('/users/client');
-
-    const { formData, errors, handleChange, validate, reset } = useForm(
-        getInitialState(clientToAssign),
-        {}
-    );
-
-    useEffect(() => {
+        <div clas
         if (!isOpen) return;
 
         setLoadError('');
