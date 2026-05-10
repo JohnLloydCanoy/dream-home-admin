@@ -1,31 +1,5 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
-import Dialog from '@components/ui/Dialog';
-import Button from '@components/ui/Button';
-import FormField from '@/components/ui/FormField';
-import apiClient from '@/lib/apiClient';
-import { useForm } from '@/hooks/useForm';
-import { useUpdate } from '@/hooks/useCrud';
-
-const normalizeList = (data) => data?.results || data?.items || data || [];
-
-const toId = (value, idField) => {
-    if (!value) return '';
-    if (typeof value === 'object') return value[idField] || '';
-    return value;
-};
-
-const getPropertyAddress = (property) => {
-    if (!property) return 'N/A';
-    const lines = [property.street, property.area, property.city, property.postcode].filter(Boolean);
-    return lines.join(', ') || 'N/A';
-};
-
-const getOwnerLabel = (owner) => {
-    if (!owner) return 'Unassigned';
-    if (typeof owner !== 'object') return owner;
-
     const fullName = `${owner?.first_name || ''} ${owner?.last_name || ''}`.trim();
     const ownerId = owner?.client_no || owner?.id || 'N/A';
     return `${fullName || 'Unknown Owner'} (${ownerId})`;
@@ -186,35 +160,6 @@ export default function PropertyAssignmentModal({
                     </div>
                 </FormSection>
 
-                <FormSection
-                    title="Assignment Update"
-                    description="This action sends a PATCH request to update owner and branch only."
-                >
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <FormField
-                            label="Owner"
-                            field="owner"
-                            type="select"
-                            value={formData.owner}
-                            onChange={handleChange}
-                            error={errors.owner}
-                        >
-                            <option value="">- Select Owner -</option>
-                            {owners.map((owner) => (
-                                <option key={owner.client_no} value={owner.client_no}>
-                                    {getOwnerLabel(owner)}
-                                </option>
-                            ))}
-                        </FormField>
-
-                        <FormField
-                            label="Branch"
-                            field="branch"
-                            type="select"
-                            value={formData.branch}
-                            onChange={handleChange}
-                            error={errors.branch}
-                        >
                             <option value="">- Select Branch -</option>
                             {branches.map((branch) => (
                                 <option key={branch.branch_no} value={branch.branch_no}>
