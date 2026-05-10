@@ -11,31 +11,7 @@ const getInitialState = (owner) => ({
     first_name: owner?.first_name || '',
     last_name: owner?.last_name || '',
     email: owner?.email || '',
-    telephone_no: owner?.telephone_no || '',
-    address: owner?.address || '',
-    password: ''
-});
-
-const getOwnerValidators = (isEditMode) => {
-    const validators = {
-        first_name: { required: true, maxLength: 100, label: 'First Name' },
-        last_name: { required: true, maxLength: 100, label: 'Last Name' },
-        email: {
-            required: true,
-            maxLength: 255,
-            label: 'Email',
-            pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-            patternMessage: 'Enter a valid email address'
-        },
-        telephone_no: {
-            required: true,
-            maxLength: 50,
-            label: 'Telephone Number',
-            pattern: /^\+?[\d\s\-()]{7,50}$/,
-            patternMessage: 'Enter a valid phone number'
-        },
-        address: { required: true, maxLength: 255, label: 'Address' }
-    };
+    tele
 
     if (!isEditMode) {
         validators.password = {
