@@ -19,80 +19,11 @@ const toLeaseNo = (lease) => {
 };
 
 const getInitialState = (preselectedLease) => ({
-    lease: toLeaseNo(preselectedLease),
-    amount_paid: '',
-    payment_date: getTodayIso(),
-    payment_method: 'Transfer',
-    reference_number: ''
-});
-
-const paymentValidators = {
-    lease: { required: true, label: 'Lease' },
-    amount_paid: {
-        required: true,
-        label: 'Amount Paid',
-        pattern: /^\d+(\.\d{1,2})?$/,
-        patternMessage: 'Enter a valid payment amount'
-    },
-    payment_date: { required: true, label: 'Payment Date' },
-    payment_method: { required: true, label: 'Payment Method' }
-};
-
-const sectionTheme = {
-    wrapper: 'bg-gray-50/70 border border-gray-100 rounded-xl p-4 sm:p-5',
-    heading: 'text-sm font-bold text-[#002147]',
-    description: 'text-xs text-gray-500 mt-1'
-};
-
-const FormSection = ({ title, description, children }) => (
-    <section className={sectionTheme.wrapper}>
-        <h3 className={sectionTheme.heading}>{title}</h3>
-        {description && <p className={sectionTheme.description}>{description}</p>}
+    lease: toLeasiption}>{description}</p>}
         <div className="mt-4">{children}</div>
     </section>
 );
-
-const getRenterLabel = (renter) => {
-    if (!renter) return 'Unknown Renter';
-    if (typeof renter !== 'object') return renter;
-
-    const fullName = `${renter.first_name || ''} ${renter.last_name || ''}`.trim();
-    return fullName || renter.client_no || 'Unknown Renter';
-};
-
-const getPropertyLabel = (property) => {
-    if (!property) return 'Unknown Property';
-    if (typeof property !== 'object') return property;
-
-    const propertyNo = property.property_no || property.id || 'N/A';
-    const location = [property.street, property.city].filter(Boolean).join(', ');
-    return location ? `${propertyNo} - ${location}` : `${propertyNo}`;
-};
-
-const formatCurrency = (value) => {
-    if (value === null || value === undefined || value === '') return 'N/A';
-
-    const amount = Number(value);
-    if (Number.isNaN(amount)) return value;
-
-    return `₱${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-};
-
-export default function PaymentModal({ isOpen, onClose, onSuccess, preselectedLease }) {
-    const [leaseOptions, setLeaseOptions] = useState([]);
-    const [loadError, setLoadError] = useState('');
-
-    const { createRecord, isLoading: isSaving, error: submitError, setError: setSubmitError } = useCreate('/payments/');
-
-    const { formData, errors, handleChange, validate, reset } = useForm(
-        getInitialState(preselectedLease),
-        paymentValidators
-    );
-
-    useEffect(() => {
-        if (!isOpen) return;
-
-        const selectedLeaseNo = toLeaseNo(preselectedLease);
+    return `₱${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractiselectedLease);
         const today = getTodayIso();
 
         setLoadError('');
