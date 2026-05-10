@@ -1,33 +1,4 @@
-"use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
-import Dialog from '@components/ui/Dialog';
-import Button from '@components/ui/Button';
-import FormField from '@/components/ui/FormField';
-import apiClient from '@/lib/apiClient';
-import { useForm } from '@/hooks/useForm';
-import { useUpdate } from '@/hooks/useCrud';
-
-const normalizeList = (data) => data?.results || data?.items || data || [];
-
-const toId = (value, idField) => {
-    if (!value) return '';
-    if (typeof value === 'object') return value[idField] || '';
-    return value;
-};
-
-const getClientName = (client) => {
-    if (!client) return 'Unknown Client';
-    return `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.client_no;
-};
-
-const getStaffLabel = (staff) => {
-    if (!staff) return 'Unknown Staff';
-    const fullName = `${staff.first_name || ''} ${staff.last_name || ''}`.trim();
-    const branchNo = toId(staff.branch, 'branch_no');
-    const role = staff.position || 'Staff';
-
-    if (branchNo) {
         return `${fullName || staff.staff_no} (${staff.staff_no}) • ${role} • ${branchNo}`;
     }
 
