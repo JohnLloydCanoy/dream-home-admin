@@ -32,8 +32,8 @@ export function validateForm(data, validators) {
  * 🏢 Branch Validation Rules
  */
 export const branchValidators = {
-    street:       { required: true, maxLength: 255, label: 'Street Address' },
-    city:         { required: true, maxLength: 100, label: 'City' },
+    street:       { required: true, maxLength: 255, label: 'Street Address', pattern: REGEX.ADDRESS, patternMessage: 'Invalid characters in address' },
+    city:         { required: true, maxLength: 100, label: 'City', pattern: REGEX.ALPHA_ONLY, patternMessage: 'City name can only contain letters' },
     telephone_no: { 
         required: true, 
         maxLength: 50, 
@@ -72,9 +72,9 @@ export const staffValidators = {
         pattern: REGEX.EMAIL,
         patternMessage: 'Enter a valid email address' 
     },
-    sex:          { required: true, maxLength: 10, label: 'Gender' },
-    dob:          { required: true, label: 'Date of Birth' },
-    address:      { required: true, maxLength: 255, label: 'Address' },
+    sex:          { required: true, maxLength: 10, label: 'Gender', pattern: REGEX.ALPHA_ONLY, patternMessage: 'Invalid gender format' },
+    dob:          { required: true, label: 'Date of Birth', pattern: REGEX.DATE_YYYY_MM_DD, patternMessage: 'Date must be in YYYY-MM-DD format' },
+    address:      { required: true, maxLength: 255, label: 'Address', pattern: REGEX.ADDRESS, patternMessage: 'Invalid characters in address' },
     telephone_no: { 
         required: true, 
         maxLength: 50, 
@@ -83,9 +83,9 @@ export const staffValidators = {
         patternMessage: 'Enter a valid PH phone number (e.g. 0912-345-6789 or 02-8123-4567)' 
     },
     nin:          { required: true, maxLength: 50, label: 'National Insurance Number', pattern: REGEX.ID_NUMBER, patternMessage: "Only letters, numbers, and hyphens allowed" },
-    position:     { required: true, maxLength: 50, label: 'Position' },
+    position:     { required: true, maxLength: 50, label: 'Position', pattern: REGEX.ALPHA_ONLY, patternMessage: 'Position can only contain letters' },
     salary:       { required: true, label: 'Salary', pattern: REGEX.MONEY, patternMessage: "Salary must be a valid amount" },
-    date_joined:  { required: true, label: 'Date Joined' },
+    date_joined:  { required: true, label: 'Date Joined', pattern: REGEX.DATE_YYYY_MM_DD, patternMessage: 'Date must be in YYYY-MM-DD format' },
     branch:       { required: true, label: 'Branch' }
 };
 
@@ -93,10 +93,10 @@ export const staffValidators = {
  * 🏘️ Property Validation Rules
  */
 export const propertyValidators = {
-    street:        { required: true, maxLength: 255, label: 'Street Address' },
-    city:          { required: true, maxLength: 100, label: 'City' },
-    postcode:      { required: true, maxLength: 20, label: 'Postcode' },
-    property_type: { required: true, maxLength: 50, label: 'Property Type' },
+    street:        { required: true, maxLength: 255, label: 'Street Address', pattern: REGEX.ADDRESS, patternMessage: 'Invalid characters in address' },
+    city:          { required: true, maxLength: 100, label: 'City', pattern: REGEX.ALPHA_ONLY, patternMessage: 'City name can only contain letters' },
+    postcode:      { required: true, maxLength: 20, label: 'Postcode', pattern: REGEX.PH_POSTCODE, patternMessage: 'Enter a valid PH postcode (0400 - 9811)' },
+    property_type: { required: true, maxLength: 50, label: 'Property Type', pattern: REGEX.ALPHA_ONLY, patternMessage: 'Property type can only contain letters' },
     no_of_rooms:   {
         required: true,
         label: 'No. of Rooms',
@@ -109,7 +109,7 @@ export const propertyValidators = {
         pattern: REGEX.MONEY,
         patternMessage: 'Monthly rent must be a valid amount'
     },
-    status:        { required: true, maxLength: 50, label: 'Status' },
+    status:        { required: true, maxLength: 50, label: 'Status', pattern: REGEX.ALPHA_ONLY, patternMessage: 'Status can only contain letters' },
     owner:         { required: true, label: 'Owner' },
     branch:        { required: true, label: 'Branch' }
 };
@@ -120,11 +120,64 @@ export const propertyValidators = {
 export const leaseValidators = {
     property:     { required: true, label: 'Property' },
     renter:       { required: true, label: 'Renter' },
-    rent_start:   { required: true, label: 'Start Date' },
-    rent_finish:  { required: true, label: 'End Date' },
+    rent_start:   { required: true, label: 'Start Date', pattern: REGEX.DATE_YYYY_MM_DD, patternMessage: 'Date must be in YYYY-MM-DD format' },
+    rent_finish:  { required: true, label: 'End Date', pattern: REGEX.DATE_YYYY_MM_DD, patternMessage: 'Date must be in YYYY-MM-DD format' },
     duration:     { required: true, label: 'Duration', pattern: REGEX.WHOLE_NUMBER, patternMessage: 'Duration must be a valid whole number' },
     monthly_rent: { required: true, label: 'Monthly Rent', pattern: REGEX.MONEY, patternMessage: 'Monthly rent must be a valid amount' },
     payment_method:{ required: true, label: 'Payment Method' },
     deposit:      { required: true, label: 'Deposit Amount', pattern: REGEX.MONEY, patternMessage: 'Deposit must be a valid amount' }
 };
 
+/**
+ * 🧑‍💼 Client Validation Rules (Renters & Owners)
+ */
+export const clientValidators = {
+    role:         { required: true, maxLength: 20, label: 'Role', pattern: REGEX.ALPHA_ONLY, patternMessage: 'Role can only contain letters' },
+    first_name:   { required: true, maxLength: 100, label: 'First Name', pattern: REGEX.NAME, patternMessage: "Only letters, spaces, hyphens, and apostrophes allowed" },
+    last_name:    { required: true, maxLength: 100, label: 'Last Name', pattern: REGEX.NAME, patternMessage: "Only letters, spaces, hyphens, and apostrophes allowed" },
+    middle_name:  { maxLength: 100, label: 'Middle Name', pattern: REGEX.NAME, patternMessage: "Only letters, spaces, hyphens, and apostrophes allowed" },
+    suffixes:     { maxLength: 10, label: 'Suffix' },
+    address:      { required: true, maxLength: 255, label: 'Address', pattern: REGEX.ADDRESS, patternMessage: 'Invalid characters in address' },
+    telephone_no: { 
+        required: true, 
+        maxLength: 50, 
+        label: 'Telephone Number',
+        pattern: REGEX.PH_PHONE_FAX,
+        patternMessage: 'Enter a valid PH phone number (e.g. 0912-345-6789 or 02-8123-4567)' 
+    },
+    email:        { 
+        required: true, 
+        maxLength: 255, 
+        label: 'Email',
+        pattern: REGEX.EMAIL,
+        patternMessage: 'Enter a valid email address' 
+    }
+};
+
+/**
+ * 👪 Next of Kin Validation Rules (Staff Emergency Contacts)
+ */
+export const nextOfKinValidators = {
+    first_name:   { required: true, maxLength: 100, label: 'First Name', pattern: REGEX.NAME, patternMessage: "Only letters, spaces, hyphens, and apostrophes allowed" },
+    last_name:    { required: true, maxLength: 100, label: 'Last Name', pattern: REGEX.NAME, patternMessage: "Only letters, spaces, hyphens, and apostrophes allowed" },
+    middle_name:  { maxLength: 100, label: 'Middle Name', pattern: REGEX.NAME, patternMessage: "Only letters, spaces, hyphens, and apostrophes allowed" },
+    suffixes:     { maxLength: 10, label: 'Suffix' },
+    relationship: { required: true, maxLength: 100, label: 'Relationship', pattern: REGEX.ALPHA_ONLY, patternMessage: 'Relationship can only contain letters' },
+    address:      { required: true, maxLength: 255, label: 'Address', pattern: REGEX.ADDRESS, patternMessage: 'Invalid characters in address' },
+    telephone_no: { 
+        required: true, 
+        maxLength: 50, 
+        label: 'Telephone Number',
+        pattern: REGEX.PH_PHONE_FAX,
+        patternMessage: 'Enter a valid PH phone number (e.g. 0912-345-6789 or 02-8123-4567)' 
+    }
+};
+
+/**
+ * 📋 Renter Requirement Validation Rules
+ */
+export const renterRequirementValidators = {
+    pref_property_type: { maxLength: 50, label: 'Preferred Property Type', pattern: REGEX.ALPHA_ONLY, patternMessage: 'Property type can only contain letters' },
+    max_monthly_rent:   { label: 'Max Monthly Rent', pattern: REGEX.MONEY, patternMessage: 'Must be a valid amount' },
+    general_comments:   { label: 'General Comments' }
+};

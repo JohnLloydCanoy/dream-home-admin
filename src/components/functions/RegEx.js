@@ -19,4 +19,16 @@ export const REGEX = {
 
     // Matches government IDs (letters, numbers, hyphens only)
     ID_NUMBER: /^[A-Za-z0-9\-]+$/,
+
+    // Matches addresses: letters, numbers, spaces, periods, commas, and #
+    ADDRESS: /^[A-Za-z0-9\s\-.,'#ñÑ]+$/,
+
+    // Matches strict alphabetic text only (no numbers or symbols other than spaces/hyphens)
+    ALPHA_ONLY: /^[A-Za-z\s\-ñÑ]+$/,
+
+    // Matches strictly YYYY-MM-DD date format
+    DATE_YYYY_MM_DD: /^\d{4}-\d{2}-\d{2}$/,
+
+    // Matches passwords (min 8 chars, at least one letter and one number)
+    PASSWORD: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/,
 };
