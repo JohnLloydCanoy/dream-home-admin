@@ -1,10 +1,13 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import CrudPageLayout from '@/components/layout/CrudPageLayout';
 import CrudFormModal from '@/components/layout/CrudFormModal';
+import ExportPDF from '@/components/ui/ExportPDF';
 import MITrimmer from '@/components/functions/MITrimmer';
 import FormField from '@/components/ui/FormField';
+import SearchBar from '@components/ui/SearchBar';
+import apiClient from '@/lib/apiClient';
 import { useForm } from '@/hooks/useForm';
 
 const roleOptions = [
@@ -36,8 +39,53 @@ const getClientValidators = (isEditMode) => ({
     password: { required: !isEditMode, maxLength: 128, label: 'Password' }
 });
 
+const toId = (value, idField) => {
+    if (!value) return '';
+    if (typeof value === 'object') return value[idField] || '';
+    return value;
+};
+
+const getBranchLabel = (branch) => {
+    if (!branch) return 'Unregistered';
+    if (typeof branch === 'object') {
+        const branchNo = branch.branch_no || '';
+        const city = branch.city || '';
+        if (branchNo && city) return `${branchNo} - ${city}`;
+        return branchNo || city || 'Unregistered';
+    }
+    return branch;
+};
+
+const getStaffLabel = (staff) => {
+    if (!staff) return 'Unassigned';
+    if (typeof staff === 'object') {
+        const name = [staff.first_name, staff.last_name].filter(Boolean).join(' ');
+        return name ? `${name} (${staff.staff_no || ''})`.trim() : staff.staff_no || 'Unassigned';
+    }
+    return staff;
+};
+
+const formatDate = (value) => {
+    if (!value) return 'N/A';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return value;
+    return parsed.toLocaleDateString();
+};
+
 function ClientModal({ isOpen, onClose, onSuccess, itemToEdit }) {
     const isEditMode = Boolean(itemToEdit?.client_no);
+    const [branches, setBranches] = useState([]);
+    const [staffList, setStaffList] = useState([]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        Promise.all([apiClient('/branches/'), apiClient('/users/staff/')])
+            .then(([branchData, staffData]) => {
+                setBranches(branchData?.items || branchData || []);
+                setStaffList(staffData?.results || staffData?.items || staffData || []);
+            })
+            .catch((error) => console.error('Failed to load registration options:', error));
+    }, [isOpen]);
 
     const { formData, errors, handleChange, validate, reset } = useForm({
         first_name: itemToEdit?.first_name || '',
@@ -48,7 +96,9 @@ function ClientModal({ isOpen, onClose, onSuccess, itemToEdit }) {
         password: '',
         telephone_no: itemToEdit?.telephone_no || '',
         address: itemToEdit?.address || '',
-        role: itemToEdit?.role || 'Renter'
+        role: itemToEdit?.role || 'Renter',
+        registered_branch: toId(itemToEdit?.registered_branch || itemToEdit?.registration_branch, 'branch_no'),
+        registered_staff: toId(itemToEdit?.registered_staff || itemToEdit?.registration_staff, 'staff_no')
     }, getClientValidators(isEditMode));
 
     useEffect(() => {
@@ -64,6 +114,8 @@ function ClientModal({ isOpen, onClose, onSuccess, itemToEdit }) {
         if (!payload.suffixes) payload.suffixes = null;
         if (!payload.address) payload.address = 'Unknown Address';
         if (!payload.role) payload.role = 'Renter';
+        payload.registered_branch = payload.registered_branch || null;
+        payload.registered_staff = payload.registered_staff || null;
 
         return payload;
     };
@@ -119,11 +171,50 @@ function ClientModal({ isOpen, onClose, onSuccess, itemToEdit }) {
                     />
                 </div>
             </section>
+
+            <section>
+                <h3 className="text-sm font-bold text-[#002147] border-b pb-2 mb-4">Registration Details</h3>
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                        label="Registered Branch"
+                        field="registered_branch"
+                        type="select"
+                        value={formData.registered_branch}
+                        onChange={handleChange}
+                        required={false}
+                    >
+                        <option value="">— Unregistered —</option>
+                        {branches.map((branch) => (
+                            <option key={branch.branch_no} value={branch.branch_no}>
+                                {branch.branch_no} - {branch.city}
+                            </option>
+                        ))}
+                    </FormField>
+                    <FormField
+                        label="Registered Staff"
+                        field="registered_staff"
+                        type="select"
+                        value={formData.registered_staff}
+                        onChange={handleChange}
+                        required={false}
+                    >
+                        <option value="">— Unassigned —</option>
+                        {staffList.map((staff) => (
+                            <option key={staff.staff_no} value={staff.staff_no}>
+                                {staff.first_name} {staff.last_name} ({staff.staff_no})
+                            </option>
+                        ))}
+                    </FormField>
+                </div>
+            </section>
         </CrudFormModal>
     );
 }
 
 export default function DashboardPage() {
+    const [searchQuery, setSearchQuery] = useState('');
+    const getFullName = (row) => `${row.last_name}, ${row.first_name} ${MITrimmer(row.middle_name)}. ${row.suffixes || ''}`.trim();
+
     const tableColumns = [
         {
             key: 'client_no', label: 'Client ID',
@@ -131,19 +222,62 @@ export default function DashboardPage() {
         },
         {
             key: 'name', label: 'Full Name',
-            render: (val, row) => <span className="font-medium text-gray-900">{row.last_name}, {row.first_name} {MITrimmer(row.middle_name)}. {row.suffixes || ''}</span>
+            render: (val, row) => (
+                <div className="text-sm text-gray-900">
+                    <p className="font-semibold">{getFullName(row)}</p>
+                    <p className="text-xs text-gray-500">{row.email || 'No email on file'}</p>
+                    <p className="text-xs text-gray-500">{row.telephone_no || 'No phone on file'}</p>
+                    <p className="text-xs text-gray-500">{row.address || 'No address on file'}</p>
+                </div>
+            ),
+            exportValue: (row) => [
+                getFullName(row),
+                row.email || 'No email on file',
+                row.telephone_no || 'No phone on file',
+                row.address || 'No address on file'
+            ].join('\n'),
+            searchValue: (row) => [
+                row.first_name,
+                row.middle_name || '',
+                row.last_name,
+                row.email || '',
+                row.telephone_no || '',
+                row.address || ''
+            ].join(' ').trim()
         },
         {
-            key: 'email', label: 'Email',
-            render: (val) => <span className="text-gray-700">{val}</span>
+            key: 'registered_branch', label: 'Registered Branch',
+            render: (val, row) => {
+                const label = getBranchLabel(row.registered_branch || row.registration_branch);
+                const isRegistered = label !== 'Unregistered';
+                return (
+                    <span className={isRegistered ? 'text-gray-900 font-medium' : 'text-gray-400 italic'}>
+                        {label}
+                    </span>
+                );
+            },
+            exportValue: (row) => getBranchLabel(row.registered_branch || row.registration_branch),
+            searchValue: (row) => getBranchLabel(row.registered_branch || row.registration_branch)
         },
         {
-            key: 'telephone_no', label: 'Telephone',
-            render: (val) => <span className="text-gray-700">{val || 'N/A'}</span>
+            key: 'registered_staff', label: 'Registered Staff',
+            render: (val, row) => {
+                const label = getStaffLabel(row.registered_staff || row.registration_staff);
+                const isAssigned = label !== 'Unassigned';
+                return (
+                    <span className={isAssigned ? 'text-gray-900 font-medium' : 'text-gray-400 italic'}>
+                        {label}
+                    </span>
+                );
+            },
+            exportValue: (row) => getStaffLabel(row.registered_staff || row.registration_staff),
+            searchValue: (row) => getStaffLabel(row.registered_staff || row.registration_staff)
         },
         {
-            key: 'address', label: 'Address',
-            render: (val) => <span className="text-gray-700">{val || 'N/A'}</span>
+            key: 'date_registered', label: 'Date Registered',
+            render: (val, row) => <span className="text-gray-700">{formatDate(row.date_registered)}</span>,
+            exportValue: (row) => formatDate(row.date_registered),
+            searchValue: (row) => formatDate(row.date_registered)
         },
         {
             key: 'role', label: 'Role',
@@ -160,7 +294,8 @@ export default function DashboardPage() {
                         {val || 'N/A'}
                     </span>
                 );
-            }
+            },
+            searchValue: (row) => row.role || ''
         }
     ];
 
@@ -172,7 +307,30 @@ export default function DashboardPage() {
             endpoint="/users/clients/"
             keyField="client_no"
             columns={tableColumns}
+            searchQuery={searchQuery}
+            searchKeys={['client_no', 'name', 'registered_branch', 'registered_staff', 'date_registered', 'role']}
             getDeleteModalItemName={(client) => `${client.first_name} ${client.last_name} (${client.role})`}
+            renderHeaderMiddle={() => (
+                <SearchBar
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    placeholder="Search clients..."
+                    className="w-full sm:max-w-sm"
+                    size="md"
+                />
+            )}
+            renderHeaderActions={(dataList) => (
+                <ExportPDF
+                    title="Clients Dashboard"
+                    subtitle="DreamHome clients, renters, and owners."
+                    fileName="clients-dashboard"
+                    columns={tableColumns}
+                    data={dataList}
+                    buttonLabel="Export PDF"
+                    buttonVariant="secondary"
+                    buttonSize="md"
+                />
+            )}
             renderFormModal={({ isOpen, onClose, onSuccess, itemToEdit }) => (
                 <ClientModal
                     isOpen={isOpen}
