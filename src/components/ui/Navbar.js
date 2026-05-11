@@ -1,24 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { jwtDecode } from 'jwt-decode';
-import apiClient from '@/lib/apiClient';
+import { useAuth } from '@/hooks/useAuth';
 
-// ─── Role helper ────────────────────────────────────────────────────
-// Returns the role string from the stored access token.
-function getRoleFromToken() {
-    try {
-        if (typeof window === 'undefined') return null;
-        const token = localStorage.getItem('adminAccessToken');
-        if (!token) return null;
-        const decoded = jwtDecode(token);
-        return decoded.role || null;   // "ADMIN", "Manager", "Supervisor", "Staff", "Secretary"
-    } catch {
-        return null;
-    }
-}
+
 
 // Which roles can see each menu
 // "ADMIN"      → superuser, full access
@@ -129,31 +116,9 @@ const ManagementSideBar = () => {
     const pathname = usePathname();
     const router = useRouter();
     const [activeMenu, setActiveMenu] = useState(null);
-    const [adminUser, setAdminUser] = useState(null);
-    const [isLoadingAdmin, setIsLoadingAdmin] = useState(true);
-    const [userRole, setUserRole] = useState(null);
+    const { user: adminUser, isLoading: isLoadingAdmin, role: userRole } = useAuth();
 
     const isActive = (path) => pathname === path;
-
-    useEffect(() => {
-        // Read role from token immediately (no network call needed)
-        setUserRole(getRoleFromToken());
-
-        let isMounted = true;
-        async function loadAdminUser() {
-            try {
-                const data = await apiClient('/users/me/');
-                if (isMounted) setAdminUser(data.user ?? data);
-            } catch (error) {
-                console.error('Profile Load Error:', error);
-                if (isMounted) setAdminUser(null);
-            } finally {
-                if (isMounted) setIsLoadingAdmin(false);
-            }
-        }
-        loadAdminUser();
-        return () => { isMounted = false; };
-    }, []);
 
     const handleSignOut = () => {
         localStorage.removeItem('adminAccessToken');

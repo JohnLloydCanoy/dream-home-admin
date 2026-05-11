@@ -9,6 +9,7 @@ import SearchBar from '@components/ui/SearchBar';
 import apiClient from '@/lib/apiClient';
 import { useForm } from '@/hooks/useForm';
 import { paymentValidators } from '@/lib/validator';
+import { useRBAC } from '@/hooks/useRBAC';
 
 // --- Helper Functions ---
 const normalizeList = (data) => data?.results || data?.items || data || [];
@@ -104,6 +105,7 @@ function PaymentModal({ isOpen, onClose, onSuccess, preselectedLease, itemToEdit
 export default function PaymentsBalancesPage() {
     const [selectedLease, setSelectedLease] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const rbac = useRBAC();
 
     // 🌟 Custom Fetch Logic: Merges Leases and Payments into one array for the table
     const fetchLedgerData = async () => {
@@ -199,6 +201,7 @@ export default function PaymentsBalancesPage() {
             onRowClick={setSelectedLease} // 👈 Tracks row selection for the banner
             searchQuery={searchQuery}
             searchKeys={['lease_no', 'renter', 'property']}
+            rbac={rbac}
             nameKey="lease_no"
             dateKey="last_payment_date"
             sortNameLabel="Lease No"
