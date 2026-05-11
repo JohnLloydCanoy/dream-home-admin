@@ -407,6 +407,11 @@ export default function PropertiesPage() {
             searchQuery={searchQuery}
             searchKeys={['property_no', 'title', 'address', 'property_type', 'no_of_rooms', 'monthly_rent', 'status', 'owner_no', 'staff_no', 'branch_no', 'date_withdrawn']}
             getDeleteModalItemName={(property) => `Property ${property.property_no} - ${property.city || ''}`.trim()}
+            nameKey="title"
+            dateKey="date_withdrawn"
+            sortNameLabel="Title"
+            sortDateLabel="Date Withdrawn"
+            pageSize={5}
             renderHeaderMiddle={() => (
                 <SearchBar
                     value={searchQuery}
