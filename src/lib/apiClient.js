@@ -35,6 +35,7 @@ async function makeRequest(endpoint, { method = 'GET', body, headers = {} } = {}
     const config = {
         method,
         headers: {
+            Accept: 'application/json',
             'Content-Type': 'application/json',
             ...(token && { Authorization: `Bearer ${token}` }),
             ...headers,
@@ -75,7 +76,10 @@ async function apiClient(endpoint, options = {}) {
     // Handle non-JSON responses
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Server returned a non-JSON response. Check the API URL.');
+        const responseText = await response.text();
+        const trimmed = responseText?.trim();
+        const preview = trimmed && trimmed.length > 240 ? `${trimmed.slice(0, 240)}...` : trimmed;
+        throw new Error(preview || 'Server returned a non-JSON response. Check the API URL.');
     }
 
     let data = await response.json();
