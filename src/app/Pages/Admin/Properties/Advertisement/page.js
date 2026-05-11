@@ -87,7 +87,7 @@ function AdvertisementModal({ isOpen, onClose, onSuccess, itemToEdit }) {
             onClose={onClose}
             onSuccess={onSuccess}
             title={itemToEdit ? `Edit Advertisement ${itemToEdit.id}` : "Create Advertisement"}
-            baseEndpoint="/advertisements"
+            baseEndpoint="/properties/adverts"
             itemId={itemToEdit?.id}
             formData={formData}
             validate={validate}
@@ -226,7 +226,7 @@ export default function AdvertisementPage() {
             title="Advertisements"
             subtitle="Manage property marketing campaigns and generic system advertisements."
             addButtonLabel="+ New Ad"
-            endpoint="/advertisements/"
+            endpoint="/properties/adverts/"
             keyField="id"
             columns={tableColumns}
             searchQuery={searchQuery}
