@@ -6,6 +6,7 @@ import CrudFormModal from '@/components/layout/CrudFormModal';
 import FormField from '@/components/ui/FormField';
 import apiClient from '@/lib/apiClient';
 import { useForm } from '@/hooks/useForm';
+import MITrimmer from '@/components/functions/MITrimmer';
 import { staffValidators } from '@/lib/validator';
 
 // --- Form Configuration Constants ---
@@ -200,6 +201,14 @@ function StaffModal({ isOpen, onClose, onSuccess, itemToEdit }) {
 
 // 🌟 2. Main Page Component
 export default function StaffDirectoryPage() {
+    const [branches, setBranches] = useState([]);
+
+    useEffect(() => {
+        apiClient('/branches/')
+            .then((branchData) => setBranches(branchData.items || branchData))
+            .catch((error) => console.error('Failed to load branches:', error));
+    }, []);
+
     const tableColumns = [
         { 
             key: 'staff_no', label: 'Staff No.',
@@ -207,7 +216,7 @@ export default function StaffDirectoryPage() {
         },
         { 
             key: 'name', label: 'Full Name',
-            render: (val, row) => <span className="font-medium text-gray-900">{row.first_name} {row.last_name}</span>
+            render: (val, row) => <span className="font-medium text-gray-900">{row.last_name}, {row.first_name} {MITrimmer(row.middle_name)}</span>
         },
         { 
             key: 'position', label: 'Position',
@@ -236,11 +245,42 @@ export default function StaffDirectoryPage() {
         },
         { 
             key: 'branch', label: 'Branch',
-            render: (val) => val ? (typeof val === 'object' ? val.city : val) : 'Unassigned'
+            render: (val) => {
+                if (!val) return 'Unassigned';
+
+                const branchInfo = typeof val === 'object'
+                    ? val
+                    : branches.find((branch) => branch.branch_no === val);
+
+                if (!branchInfo) {
+                    return <span className="text-gray-900 font-medium">{val}</span>;
+                }
+
+                const line1 = [branchInfo.street, branchInfo.area]
+                    .filter(Boolean)
+                    .join(', ');
+                const line2 = [branchInfo.city, branchInfo.postcode]
+                    .filter(Boolean)
+                    .join(', ');
+                const hasAddress = Boolean(line1 || line2);
+
+                return (
+                    <div className="text-xs text-gray-500">
+                        <p className="text-gray-900 font-medium">{branchInfo.branch_no || 'Branch'}</p>
+                        {hasAddress ? (
+                            <>
+                                {line1 && <p>{line1}</p>}
+                                {line2 && <p>{line2}</p>}
+                            </>
+                        ) : (
+                            <p>Address unavailable</p>
+                        )}
+                    </div>
+                );
+            }
         },
         { key: 'telephone_no', label: 'Contact No.' },
         { key: 'salary', label: 'Salary', render: (val) => `Ph ${val}` },
-        { key: 'roles', label: 'Roles', render: (val) => Array.isArray(val) ? val.join(', ') : (val || 'None') }
     ];
 
     return (
