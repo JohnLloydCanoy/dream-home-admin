@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import DataTable from '@/components/ui/DataTable';
 import FormField from '@/components/ui/FormField';
 import Button from '@components/ui/Button';
-import ClientAssignmentModal from '@/components/ui/ClientAssignmentModal';
+
 import apiClient from '@/lib/apiClient';
 import { useForm } from '@/hooks/useForm';
 
