@@ -9,6 +9,7 @@ import SearchBar from '@components/ui/SearchBar';
 import apiClient from '@/lib/apiClient';
 import { useForm } from '@/hooks/useForm';
 import { propertyValidators } from '@/lib/validator';
+import { useRBAC } from '@/hooks/useRBAC';
 
 const normalizeList = (data) => data?.results || data?.items || data || [];
 
@@ -252,6 +253,7 @@ function PropertyModal({ isOpen, onClose, onSuccess, itemToEdit }) {
 
 export default function PropertiesPage() {
     const [searchQuery, setSearchQuery] = useState('');
+    const rbac = useRBAC();
     const [owners, setOwners] = useState([]);
     const [branches, setBranches] = useState([]);
     const [staffList, setStaffList] = useState([]);
@@ -407,6 +409,7 @@ export default function PropertiesPage() {
             searchQuery={searchQuery}
             searchKeys={['property_no', 'title', 'address', 'property_type', 'no_of_rooms', 'monthly_rent', 'status', 'owner_no', 'staff_no', 'branch_no', 'date_withdrawn']}
             getDeleteModalItemName={(property) => `Property ${property.property_no} - ${property.city || ''}`.trim()}
+            rbac={rbac}
             nameKey="title"
             dateKey="date_withdrawn"
             sortNameLabel="Title"
