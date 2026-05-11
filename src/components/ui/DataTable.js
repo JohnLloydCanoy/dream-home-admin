@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 
 
 const DataTable = ({ 
@@ -10,8 +10,49 @@ const DataTable = ({
     isLoading = false, 
     emptyMessage = "No records found.",
     onRowClick,
-    actions
+    actions,
+    searchQuery = '',
+    searchKeys,
+    searchPredicate
 }) => {
+    const safeColumns = Array.isArray(columns) ? columns : [];
+    const safeData = Array.isArray(data) ? data : [];
+
+    const filteredData = useMemo(() => {
+        const normalizedQuery = String(searchQuery || '').trim().toLowerCase();
+        if (!normalizedQuery) return safeData;
+
+        const searchableColumns = safeColumns.filter((column) => column.searchable !== false);
+        const defaultKeys = searchableColumns.map((column) => column.key).filter(Boolean);
+        const keysToSearch = Array.isArray(searchKeys) && searchKeys.length ? searchKeys : defaultKeys;
+
+        if (!keysToSearch.length) return safeData;
+
+        const formatValue = (value) => {
+            if (value === null || value === undefined) return '';
+            if (typeof value === 'string') return value;
+            if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+            if (value instanceof Date) return value.toLocaleDateString();
+            if (Array.isArray(value)) return value.map(formatValue).join(' ');
+            if (typeof value === 'object') return JSON.stringify(value);
+            return String(value);
+        };
+
+        const defaultPredicate = (row) => {
+            return keysToSearch.some((key) => {
+                const column = safeColumns.find((col) => col.key === key);
+                const rawValue = column?.searchValue ? column.searchValue(row) : row?.[key];
+                const normalizedValue = formatValue(rawValue).toLowerCase();
+                return normalizedValue.includes(normalizedQuery);
+            });
+        };
+
+        const predicate = searchPredicate
+            ? (row) => searchPredicate(row, normalizedQuery)
+            : defaultPredicate;
+
+        return safeData.filter(predicate);
+    }, [safeColumns, safeData, searchKeys, searchQuery, searchPredicate]);
 
     // --- Loading State ---
     if (isLoading) {
@@ -48,7 +89,7 @@ const DataTable = ({
 
                 {/* --- TABLE BODY --- */}
                 <tbody className="divide-y divide-gray-100">
-                    {data.length === 0 ? (
+                    {filteredData.length === 0 ? (
                         /* Empty State */
                         <tr>
                             <td colSpan={columns.length + (actions ? 1 : 0)} className="px-6 py-12 text-center text-gray-500">
@@ -62,7 +103,7 @@ const DataTable = ({
                         </tr>
                     ) : (
                         /* Data Rows */
-                        data.map((row, index) => (
+                        filteredData.map((row, index) => (
                             <tr 
                                 key={row[keyField] || index} 
                                 className={`transition-colors hover:bg-gray-50/50 ${onRowClick ? 'cursor-pointer' : ''}`}
