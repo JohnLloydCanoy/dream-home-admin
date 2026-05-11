@@ -1,10 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CrudPageLayout from '@/components/layout/CrudPageLayout';
-import Button from '../../../../../../global-components/ui/Button';
-import PaymentModal from '@/components/ui/PaymentModal';
+import CrudFormModal from '@/components/layout/CrudFormModal';
+import ExportPDF from '@/components/ui/ExportPDF';
+import FormField from '@/components/ui/FormField';
+import SearchBar from '@components/ui/SearchBar';
 import apiClient from '@/lib/apiClient';
+import { useForm } from '@/hooks/useForm';
+import { paymentValidators } from '@/lib/validator';
 
 // --- Helper Functions ---
 const normalizeList = (data) => data?.results || data?.items || data || [];
@@ -15,9 +19,91 @@ const formatCurrency = (value) => Number.isNaN(Number(value)) ? (value || 'N/A')
 const getPaymentLeaseNo = (payment) => toLeaseNo(payment?.lease);
 const getLatestDate = (current, candidate) => (!candidate ? current : !current ? candidate : (candidate > current ? candidate : current));
 
+// --- PaymentModal Component ---
+function PaymentModal({ isOpen, onClose, onSuccess, preselectedLease, itemToEdit }) {
+    const [leases, setLeases] = useState([]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        apiClient('/leases/')
+            .then(data => setLeases(normalizeList(data)))
+            .catch(err => console.error("Failed to load leases:", err));
+    }, [isOpen]);
+
+    const { formData, errors, handleChange, validate, reset } = useForm({
+        lease: itemToEdit ? toLeaseNo(itemToEdit.lease) : toLeaseNo(preselectedLease) || '',
+        amount_paid: itemToEdit?.amount_paid || '',
+        payment_date: itemToEdit?.payment_date || new Date().toISOString().split('T')[0],
+        payment_method: itemToEdit?.payment_method || 'Cash'
+    }, paymentValidators);
+
+    useEffect(() => {
+        if (isOpen) {
+            reset();
+            if (preselectedLease && !itemToEdit) {
+                handleChange({ target: { name: 'lease', value: toLeaseNo(preselectedLease) } });
+            }
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [itemToEdit?.payment_no, preselectedLease, isOpen]);
+
+    const formatPayload = (data) => {
+        const payload = { ...data };
+        payload.amount_paid = Number(payload.amount_paid);
+        return payload;
+    };
+
+    return (
+        <CrudFormModal
+            isOpen={isOpen}
+            onClose={onClose}
+            onSuccess={onSuccess}
+            title={itemToEdit ? `Edit Payment ${itemToEdit.payment_no || ''}` : "Log Payment"}
+            baseEndpoint="/payments"
+            itemId={itemToEdit?.payment_no}
+            formData={formData}
+            validate={validate}
+            transformPayload={formatPayload}
+            submitLabel="Save Payment"
+            updateLabel="Update Payment"
+        >
+            <section>
+                <h3 className="text-sm font-bold text-[#002147] border-b pb-2 mb-4 flex items-center gap-2">
+                    <span className="bg-[#002147] text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px]">1</span>
+                    Payment Details
+                </h3>
+                <div className="space-y-4">
+                    <FormField label="Lease" field="lease" type="select" value={formData.lease} onChange={handleChange} error={errors.lease}>
+                        <option value="">— Select Lease —</option>
+                        {leases.map(l => (
+                            <option key={l.lease_no} value={l.lease_no}>
+                                Lease {l.lease_no} - {getRenterLabel(l.renter)}
+                            </option>
+                        ))}
+                    </FormField>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField label="Amount Paid" field="amount_paid" type="number" value={formData.amount_paid} onChange={handleChange} error={errors.amount_paid} placeholder="₱" />
+                        <FormField label="Payment Date" field="payment_date" type="date" value={formData.payment_date} onChange={handleChange} error={errors.payment_date} />
+                    </div>
+
+                    <FormField label="Payment Method" field="payment_method" type="select" value={formData.payment_method} onChange={handleChange} error={errors.payment_method}>
+                        <option value="Cash">Cash</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Credit Card">Credit Card</option>
+                        <option value="Cheque">Cheque</option>
+                    </FormField>
+                </div>
+            </section>
+        </CrudFormModal>
+    );
+}
+
 // --- Main Component ---
 export default function PaymentsBalancesPage() {
     const [selectedLease, setSelectedLease] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     // 🌟 Custom Fetch Logic: Merges Leases and Payments into one array for the table
     const fetchLedgerData = async () => {
@@ -58,13 +144,48 @@ export default function PaymentsBalancesPage() {
     };
 
     const tableColumns = [
-        { key: 'lease_no', label: 'Lease No', render: (val) => <span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded text-xs">{val}</span> },
-        { key: 'renter', label: 'Renter', render: getRenterLabel },
-        { key: 'property', label: 'Property', render: getPropertyLabel },
-        { key: 'rent_due', label: 'Total Rent Due', render: formatCurrency },
-        { key: 'paid_so_far', label: 'Amount Paid So Far', render: (val) => <span className="font-medium text-green-700">{formatCurrency(val)}</span> },
-        { key: 'outstanding_balance', label: 'Balance', render: (val) => <span className={`font-semibold ${val > 0 ? 'text-red-700' : 'text-green-700'}`}>{formatCurrency(val)}</span> },
-        { key: 'last_payment_date', label: 'Last Payment', render: (val) => val || 'No payment yet' }
+        { 
+            key: 'lease_no', 
+            label: 'Lease No', 
+            render: (val) => <span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded text-xs">{val}</span> 
+        },
+        { 
+            key: 'renter', 
+            label: 'Renter', 
+            render: getRenterLabel,
+            exportValue: (row) => getRenterLabel(row.renter),
+            searchValue: (row) => getRenterLabel(row.renter)
+        },
+        { 
+            key: 'property', 
+            label: 'Property', 
+            render: getPropertyLabel,
+            exportValue: (row) => getPropertyLabel(row.property),
+            searchValue: (row) => getPropertyLabel(row.property)
+        },
+        { 
+            key: 'rent_due', 
+            label: 'Total Rent Due', 
+            render: formatCurrency,
+            exportValue: (row) => formatCurrency(row.rent_due)
+        },
+        { 
+            key: 'paid_so_far', 
+            label: 'Amount Paid So Far', 
+            render: (val) => <span className="font-medium text-green-700">{formatCurrency(val)}</span>,
+            exportValue: (row) => formatCurrency(row.paid_so_far)
+        },
+        { 
+            key: 'outstanding_balance', 
+            label: 'Balance', 
+            render: (val) => <span className={`font-semibold ${val > 0 ? 'text-red-700' : 'text-green-700'}`}>{formatCurrency(val)}</span>,
+            exportValue: (row) => formatCurrency(row.outstanding_balance)
+        },
+        { 
+            key: 'last_payment_date', 
+            label: 'Last Payment', 
+            render: (val) => val || 'No payment yet' 
+        }
     ];
 
     return (
@@ -76,16 +197,44 @@ export default function PaymentsBalancesPage() {
             columns={tableColumns}
             fetchData={fetchLedgerData} // 👈 Pass our custom merger function
             onRowClick={setSelectedLease} // 👈 Tracks row selection for the banner
+            searchQuery={searchQuery}
+            searchKeys={['lease_no', 'renter', 'property']}
             
+            renderHeaderMiddle={() => (
+                <SearchBar
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    placeholder="Search leases & payments..."
+                    className="w-full sm:max-w-sm"
+                    size="md"
+                />
+            )}
+            
+            renderHeaderActions={(dataList) => (
+                <ExportPDF
+                    title="Payments & Balances"
+                    subtitle="Rental payments and outstanding balances per lease agreement."
+                    fileName="payments_balances"
+                    columns={tableColumns}
+                    data={dataList}
+                    buttonLabel="Export PDF"
+                    buttonVariant="secondary"
+                    buttonSize="md"
+                />
+            )}
+
             // 🌟 Override standard Edit/Delete with custom "Log Payment" button
             customActions={(row, handleEditClick) => (
-                <Button variant="secondary" size="sm" onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedLease(row); // Update our banner state
-                    handleEditClick(row);  // Triggers the layout's modal state
-                }}>
+                <button 
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-1.5 rounded transition-colors"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedLease(row); // Update our banner state
+                        handleEditClick(row);  // Triggers the layout's modal state
+                    }}
+                >
                     Log Payment
-                </Button>
+                </button>
             )}
 
             // 🌟 Custom Top UI Grid & Selection Banner
@@ -127,14 +276,26 @@ export default function PaymentsBalancesPage() {
             }}
 
             // 🌟 Inject PaymentModal instead of a standard FormModal
-            renderFormModal={({ isOpen, onClose, onSuccess, itemToEdit }) => (
-                <PaymentModal
-                    isOpen={isOpen}
-                    onClose={onClose}
-                    onSuccess={onSuccess}
-                    preselectedLease={itemToEdit || selectedLease} // Uses layout's active item
-                />
-            )}
+            renderFormModal={({ isOpen, onClose, onSuccess, itemToEdit }) => {
+                // If itemToEdit has lease_no, it's a Lease object passed from the table row click.
+                // We don't want to edit the lease, we want to create a new Payment for it.
+                const isLease = itemToEdit && 'lease_no' in itemToEdit && !('payment_no' in itemToEdit);
+                const paymentToEdit = isLease ? null : itemToEdit;
+                const leaseToPreselect = isLease ? itemToEdit : selectedLease;
+
+                return (
+                    <PaymentModal
+                        isOpen={isOpen}
+                        onClose={() => {
+                            setSelectedLease(null);
+                            onClose();
+                        }}
+                        onSuccess={onSuccess}
+                        preselectedLease={leaseToPreselect}
+                        itemToEdit={paymentToEdit}
+                    />
+                );
+            }}
         />
     );
 }
