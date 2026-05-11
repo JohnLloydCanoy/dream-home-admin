@@ -2,7 +2,7 @@
 
 import React from 'react';
 import CrudPageLayout from '@/components/layout/CrudPageLayout';
-import PropertyFormModal from '@/components/ui/PropertyFormModal';
+
 
 export default function PropertiesPage() {
     const tableColumns = [
