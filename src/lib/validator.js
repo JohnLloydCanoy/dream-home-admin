@@ -121,7 +121,19 @@ export const viewingValidators = {
     property_no: { required: true, label: 'Property' },
     renter_no:   { required: true, label: 'Renter' },
     view_date:   { required: true, label: 'Viewing Date', pattern: REGEX.DATE_YYYY_MM_DD, patternMessage: 'Date must be in YYYY-MM-DD format' },
+    status:      { required: true, label: 'Status' },
     comments:    { maxLength: 500, label: 'Comments' }
+};
+
+/**
+ * 🛠️ Property Inspection Validation Rules
+ */
+export const inspectionValidators = {
+    property_no:      { required: true, label: 'Property' },
+    staff_no:         { required: true, label: 'Staff' },
+    inspection_date:  { required: true, label: 'Inspection Date', pattern: REGEX.DATE_YYYY_MM_DD, patternMessage: 'Date must be in YYYY-MM-DD format' },
+    status:           { required: true, label: 'Status' },
+    comments:         { maxLength: 500, label: 'Comments' }
 };
 
 /**
