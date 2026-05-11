@@ -115,6 +115,16 @@ export const propertyValidators = {
 };
 
 /**
+ * 👁️ Property Viewing Validation Rules
+ */
+export const viewingValidators = {
+    property_no: { required: true, label: 'Property' },
+    renter_no:   { required: true, label: 'Renter' },
+    view_date:   { required: true, label: 'Viewing Date', pattern: REGEX.DATE_YYYY_MM_DD, patternMessage: 'Date must be in YYYY-MM-DD format' },
+    comments:    { maxLength: 500, label: 'Comments' }
+};
+
+/**
  * 📄 Lease Validation Rules (Ready for when you build the Lease form!)
  */
 export const leaseValidators = {
