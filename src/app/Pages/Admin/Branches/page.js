@@ -5,6 +5,7 @@ import CrudPageLayout from '@/components/layout/CrudPageLayout';
 import CrudFormModal from '@/components/layout/CrudFormModal';
 import ExportPDF from '@/components/ui/ExportPDF';
 import FormField from '@/components/ui/FormField';
+import SearchBar from '@components/ui/SearchBar';
 import apiClient from '@/lib/apiClient';
 import { useForm } from '@/hooks/useForm';
 import { branchValidators } from '@/lib/validator'; 
@@ -108,6 +109,7 @@ function BranchModal({ isOpen, onClose, onSuccess, itemToEdit }) {
 }
 
 export default function BranchesPage() {
+    const [searchQuery, setSearchQuery] = useState('');
     const buildBranchAddress = (row) => [row.street, row.area, row.city, row.postcode].filter(Boolean).join(', ');
     const getManagerName = (manager) => {
         if (!manager) return 'Unassigned';
@@ -153,7 +155,18 @@ export default function BranchesPage() {
             endpoint="/branches/"
             keyField="branch_no"
             columns={tableColumns}
+            searchQuery={searchQuery}
+            searchKeys={['branch_no', 'street', 'area', 'city', 'postcode', 'telephone_no', 'manager']}
             getDeleteModalItemName={(branch) => `Branch ${branch.branch_no} - ${branch.city}`}
+            renderHeaderMiddle={() => (
+                <SearchBar
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    placeholder="Search branches..."
+                    className="w-full sm:max-w-sm"
+                    size="md"
+                />
+            )}
             renderHeaderActions={(dataList) => (
                 <ExportPDF
                     title="Branch Operations"
