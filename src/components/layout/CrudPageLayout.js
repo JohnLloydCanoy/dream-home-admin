@@ -17,10 +17,14 @@ export default function CrudPageLayout({
     getDeleteModalItemName,
     renderTopContent,
     renderHeaderActions,
+    renderHeaderMiddle,
     // New Optional Props for Advanced Pages
     fetchData,
     customActions,
-    onRowClick
+    onRowClick,
+    searchQuery,
+    searchKeys,
+    searchPredicate
 }) {
     // Shared Data State
     const [dataList, setDataList] = useState([]);
@@ -87,10 +91,15 @@ export default function CrudPageLayout({
     return (
         <div className="w-full max-w-7xl mx-auto space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-                <div>
+                <div className="min-w-0">
                     <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
                     <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
                 </div>
+                {renderHeaderMiddle && (
+                    <div className="w-full sm:flex-1 sm:flex sm:justify-end">
+                        {renderHeaderMiddle(dataList)}
+                    </div>
+                )}
                 <div className="flex items-center gap-3 ">
                     {renderHeaderActions && renderHeaderActions(dataList)}
                     <Button  variant="primary" onClick={handleAddClick}>
@@ -108,6 +117,9 @@ export default function CrudPageLayout({
                 keyField={keyField}
                 isLoading={isLoading}
                 actions={actionsToRender}
+                searchQuery={searchQuery}
+                searchKeys={searchKeys}
+                searchPredicate={searchPredicate}
                 onRowClick={onRowClick}
             />
 
