@@ -6,3 +6,4 @@ export default function MITrimmer(value) {
 
 	return trimmed[0].toUpperCase();
 }
+
