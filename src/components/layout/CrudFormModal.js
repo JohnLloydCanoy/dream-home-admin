@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import Dialog from '@/components/ui/Dialog'; 
-import Button from '@/components/ui/Button'; 
-import FormField from '@/components/ui/FormField'; // 👈 1. Added FormField import
+import Dialog from '@components/ui/Dialog'; 
+import Button from '@components/ui/Button'; 
+import FormField from '@/components/ui/FormField'; 
 import { useCreate, useUpdate } from '@/hooks/useCrud';
 
 export default function CrudFormModal({
