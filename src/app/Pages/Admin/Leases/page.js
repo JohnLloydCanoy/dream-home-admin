@@ -9,6 +9,7 @@ import SearchBar from '@components/ui/SearchBar';
 import apiClient from '@/lib/apiClient';
 import { useForm } from '@/hooks/useForm';
 import { leaseValidators } from '@/lib/validator';
+import { useRBAC } from '@/hooks/useRBAC';
 
 // --- Helper Functions ---
 const normalizeList = (data) => data?.results || data?.items || data || [];
@@ -183,6 +184,7 @@ function LeaseModal({ isOpen, onClose, onSuccess, itemToEdit }) {
 // --- Main Page Component ---
 export default function LeaseAgreementsPage() {
     const [searchQuery, setSearchQuery] = useState('');
+    const rbac = useRBAC();
 
     const tableColumns = [
         {
@@ -245,6 +247,7 @@ export default function LeaseAgreementsPage() {
             searchQuery={searchQuery}
             searchKeys={['lease_no', 'property', 'renter', 'payment_method']}
             getDeleteModalItemName={(lease) => `Lease ${lease.lease_no || ''}`.trim()}
+            rbac={rbac}
             nameKey="lease_no"
             dateKey="rent_start"
             sortNameLabel="Lease No"
