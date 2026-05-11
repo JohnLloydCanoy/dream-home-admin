@@ -40,7 +40,17 @@ export default function CrudPageLayout({
     // ── Pagination ───────────────────────────────────────────────────────────
     // pageSize = 0 means no pagination (all records shown)
     pageSize = 0,
+    // ── RBAC ─────────────────────────────────────────────────────────────────
+    // Pass the object from useRBAC() to enable permission-based UI control.
+    // If not provided, all actions are visible (backward-compatible).
+    rbac,
 }) {
+    // ── RBAC defaults (full access when no rbac prop is passed) ───────────
+    const canCreate = rbac?.canCreate ?? true;
+    const canEdit   = rbac?.canEdit   ?? true;
+    const canDelete = rbac?.canDelete ?? true;
+    const filterByBranch = rbac?.filterByBranch ?? ((data) => data);
+
     // ── Data ──────────────────────────────────────────────────────────────────
     const [dataList, setDataList] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -79,10 +89,13 @@ export default function CrudPageLayout({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [endpoint]);
 
+    // ── Branch-scoped data ────────────────────────────────────────────────────
+    const scopedData = useMemo(() => filterByBranch(dataList), [dataList, filterByBranch]);
+
     // ── Sorted data ───────────────────────────────────────────────────────────
     const sortedData = useMemo(
-        () => sortEnabled ? applySort(dataList, sortConfig, nameKey, dateKey) : dataList,
-        [dataList, sortConfig, sortEnabled, nameKey, dateKey]
+        () => sortEnabled ? applySort(scopedData, sortConfig, nameKey, dateKey) : scopedData,
+        [scopedData, sortConfig, sortEnabled, nameKey, dateKey]
     );
 
     // ── Paginated data ────────────────────────────────────────────────────────
@@ -92,23 +105,35 @@ export default function CrudPageLayout({
     // Reset to page 1 whenever sort or data changes
     useEffect(() => {
         setCurrentPage(1);
-    }, [sortConfig, dataList, pageSize]);
+    }, [sortConfig, scopedData, pageSize]);
 
     // ── Action handlers ───────────────────────────────────────────────────────
     const handleAddClick = () => { setItemToEdit(null); setIsFormOpen(true); };
     const handleEditClick = (item) => { setItemToEdit(item); setIsFormOpen(true); };
     const handleDeleteClick = (item) => { setItemToDelete(item); setIsDeleteOpen(true); };
 
-    const renderActions = (row) => (
-        <div className="flex justify-end gap-3">
-            <button onClick={(e) => { e.stopPropagation(); handleEditClick(row); }} className="text-blue-600 hover:text-blue-900 text-sm font-semibold">
-                Edit
-            </button>
-            <button onClick={(e) => { e.stopPropagation(); handleDeleteClick(row); }} className="text-red-600 hover:text-red-900 text-sm font-semibold">
-                Delete
-            </button>
-        </div>
-    );
+    const renderActions = (row) => {
+        // If the user has no edit or delete permission, show nothing
+        if (!canEdit && !canDelete) return null;
+
+        // For staff/secretary: only show Edit if the row is in their branch
+        const rowInBranch = rbac?.isOwnBranch ? rbac.isOwnBranch(row) : true;
+
+        return (
+            <div className="flex justify-end gap-3">
+                {canEdit && rowInBranch && (
+                    <button onClick={(e) => { e.stopPropagation(); handleEditClick(row); }} className="text-blue-600 hover:text-blue-900 text-sm font-semibold">
+                        Edit
+                    </button>
+                )}
+                {canDelete && (
+                    <button onClick={(e) => { e.stopPropagation(); handleDeleteClick(row); }} className="text-red-600 hover:text-red-900 text-sm font-semibold">
+                        Delete
+                    </button>
+                )}
+            </div>
+        );
+    };
 
     const actionsToRender = customActions
         ? (row) => customActions(row, handleEditClick, handleDeleteClick)
@@ -126,19 +151,21 @@ export default function CrudPageLayout({
                 </div>
                 {renderHeaderMiddle && (
                     <div className="w-full sm:flex-1 sm:flex sm:justify-end">
-                        {renderHeaderMiddle(dataList)}
+                        {renderHeaderMiddle(scopedData)}
                     </div>
                 )}
                 <div className="flex items-center gap-3">
-                    {renderHeaderActions && renderHeaderActions(dataList)}
-                    <Button variant="primary" onClick={handleAddClick}>
-                        {addButtonLabel}
-                    </Button>
+                    {renderHeaderActions && renderHeaderActions(scopedData)}
+                    {canCreate && (
+                        <Button variant="primary" onClick={handleAddClick}>
+                            {addButtonLabel}
+                        </Button>
+                    )}
                 </div>
             </div>
 
             {/* ── Optional top content (summary cards, etc.) ── */}
-            {renderTopContent && renderTopContent(dataList)}
+            {renderTopContent && renderTopContent(scopedData)}
 
             {/* ── Data table ── */}
             <DataTable
@@ -190,14 +217,16 @@ export default function CrudPageLayout({
             })}
 
             {/* ── Delete modal ── */}
-            <ConfirmDeleteModal
-                isOpen={isDeleteOpen}
-                onClose={() => setIsDeleteOpen(false)}
-                onSuccess={loadData}
-                endpoint={endpoint}
-                idToDelete={itemToDelete?.[keyField]}
-                itemName={itemToDelete && getDeleteModalItemName ? getDeleteModalItemName(itemToDelete) : ''}
-            />
+            {canDelete && (
+                <ConfirmDeleteModal
+                    isOpen={isDeleteOpen}
+                    onClose={() => setIsDeleteOpen(false)}
+                    onSuccess={loadData}
+                    endpoint={endpoint}
+                    idToDelete={itemToDelete?.[keyField]}
+                    itemName={itemToDelete && getDeleteModalItemName ? getDeleteModalItemName(itemToDelete) : ''}
+                />
+            )}
         </div>
     );
-}
+}
