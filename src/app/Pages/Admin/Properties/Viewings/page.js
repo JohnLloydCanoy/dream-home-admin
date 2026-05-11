@@ -249,10 +249,10 @@ export default function PropertyViewingsPage() {
             )
         },
         {
-            key: 'property',
+            key: 'property_no',
             label: 'Property',
-            render: (_, row) => {
-                const display = getPropertyDisplay(row.property_no || row.property, propertiesById);
+            render: (value, row) => {
+                const display = getPropertyDisplay(value || row.property, propertiesById);
                 return renderNameWithId(display.name, display.id);
             },
             exportValue: (row) => {
@@ -265,10 +265,10 @@ export default function PropertyViewingsPage() {
             }
         },
         {
-            key: 'client',
+            key: 'renter_no',
             label: 'Renter',
-            render: (_, row) => {
-                const display = getClientDisplay(row.renter_no || row.renter || row.client, rentersById);
+            render: (value, row) => {
+                const display = getClientDisplay(value || row.renter || row.client, rentersById);
                 return renderNameWithId(display.name, display.id);
             },
             exportValue: (row) => {

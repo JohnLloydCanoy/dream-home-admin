@@ -163,12 +163,12 @@ export default function AdminPage() {
             )
         },
         {
-            key: 'renter',
+            key: 'renter_no',
             label: 'Renter',
             render: (value) => getRenterLabel(value)
         },
         {
-            key: 'property',
+            key: 'property_no',
             label: 'Property',
             render: (value) => getPropertyLabel(value)
         },
