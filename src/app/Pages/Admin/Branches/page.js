@@ -30,7 +30,7 @@ function BranchModal({ isOpen, onClose, onSuccess, itemToEdit }) {
         postcode: itemToEdit?.postcode || '',
         telephone_no: itemToEdit?.telephone_no || '',
         fax_no: itemToEdit?.fax_no || '',
-        manager: (typeof itemToEdit?.manager === 'object' ? itemToEdit.manager?.staff_no : itemToEdit?.manager) || ''
+        manager_no: (typeof itemToEdit?.manager_no === 'object' ? itemToEdit.manager_no?.staff_no : itemToEdit?.manager_no) || ''
     }, branchValidators);
 
     // Reset form when opening or changing items
@@ -41,7 +41,7 @@ function BranchModal({ isOpen, onClose, onSuccess, itemToEdit }) {
 
     // Format data before API submission
     const formatPayload = (data) => {
-        if (!data.manager) data.manager = null;
+        if (!data.manager_no) data.manager_no = null;
         if (!data.fax_no) data.fax_no = null;
         return data;
     };
@@ -92,7 +92,7 @@ function BranchModal({ isOpen, onClose, onSuccess, itemToEdit }) {
                     <FormField label="Fax No." field="fax_no" value={formData.fax_no} onChange={handleChange} required={false} placeholder="Optional" />
                 </div>
                 <div className="mt-5 bg-gray-50/50 p-4 rounded-xl border border-gray-100">
-                    <FormField label="Branch Manager" field="manager" type="select" value={formData.manager} onChange={handleChange} required={false} labelClass="text-blue-900">
+                    <FormField label="Branch Manager" field="manager_no" type="select" value={formData.manager_no} onChange={handleChange} required={false} labelClass="text-blue-900">
                         <option value="">— Unassigned —</option>
                         {staffList.map(s => (
                             <option key={s.staff_no} value={s.staff_no}>
@@ -147,13 +147,13 @@ export default function BranchesPage() {
         },
         { key: 'telephone_no', label: 'Contact No.' },
         {
-            key: 'manager', label: 'Manager',
+            key: 'manager_no', label: 'Manager',
             render: (val) => (
                 <span className={`text-sm ${val ? 'text-gray-900 font-medium' : 'text-gray-400 italic'}`}>
-                    {val || "Unassigned"}
+                    {getManagerName(val)}
                 </span>
             ),
-            exportValue: (row) => getManagerName(row.manager)
+            exportValue: (row) => getManagerName(row.manager_no)
         },
     ];
 
@@ -166,7 +166,7 @@ export default function BranchesPage() {
             keyField="branch_no"
             columns={tableColumns}
             searchQuery={searchQuery}
-            searchKeys={['branch_no', 'street', 'area', 'city', 'postcode', 'telephone_no', 'manager']}
+            searchKeys={['branch_no', 'street', 'area', 'city', 'postcode', 'telephone_no', 'manager_no']}
             getDeleteModalItemName={(branch) => `Branch ${branch.branch_no} - ${branch.city}`}
             rbac={branchRbac}
             nameKey="city"
