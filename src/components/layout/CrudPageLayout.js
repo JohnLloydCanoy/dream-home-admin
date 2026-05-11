@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import DataTable from '@/components/ui/DataTable'; 
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal'; 
 import apiClient from '@/lib/apiClient';
+import Button from '@components/ui/Button';
 
 export default function CrudPageLayout({
     title,
@@ -15,6 +16,7 @@ export default function CrudPageLayout({
     renderFormModal,
     getDeleteModalItemName,
     renderTopContent,
+    renderHeaderActions,
     // New Optional Props for Advanced Pages
     fetchData,
     customActions,
@@ -89,9 +91,12 @@ export default function CrudPageLayout({
                     <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
                     <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
                 </div>
-                <button onClick={handleAddClick} className="bg-[#002147] hover:bg-blue-900 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-sm">
-                    {addButtonLabel}
-                </button>
+                <div className="flex items-center gap-3 ">
+                    {renderHeaderActions && renderHeaderActions(dataList)}
+                    <Button  variant="primary" onClick={handleAddClick}>
+                        {addButtonLabel}
+                    </Button>
+                </div>
             </div>
 
             {/* Inject custom top content (like summary cards) here, passing the dataList */}
