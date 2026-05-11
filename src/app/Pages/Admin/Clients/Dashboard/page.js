@@ -141,6 +141,10 @@ export default function DashboardPage() {
             render: (val) => <span className="text-gray-700">{val || 'N/A'}</span>
         },
         {
+            key: 'address', label: 'Address',
+            render: (val) => <span className="text-gray-700">{val || 'N/A'}</span>
+        },
+        {
             key: 'role', label: 'Role',
             render: (val) => {
                 const colors = {
