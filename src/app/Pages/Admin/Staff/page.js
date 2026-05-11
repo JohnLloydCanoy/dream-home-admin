@@ -225,6 +225,20 @@ export default function StaffDirectoryPage() {
         return [line1, line2].filter(Boolean).join('\n');
     };
 
+    const getKinName = (kin) => {
+        if (!kin) return '';
+        const first = kin.first_name || '';
+        const last = kin.last_name || '';
+        const middle = MITrimmer(kin.middle_name);
+        const suffix = kin.suffix || '';
+        const nameParts = [last, last && ',' , first, middle, suffix].filter(Boolean).join(' ');
+        return nameParts.trim();
+    };
+
+    const getKinAddress = (kin) => (kin?.address || '').trim();
+    const getKinPhone = (kin) => (kin?.telephone_no || '').trim();
+    const getKinRelationship = (kin) => (kin?.relationship || '').trim();
+
     const tableColumns = [
         { 
             key: 'staff_no', label: 'Staff No.',
@@ -307,6 +321,45 @@ export default function StaffDirectoryPage() {
             }
         },
         { key: 'telephone_no', label: 'Contact No.' },
+        {
+            key: 'next_of_kin', label: 'Next of Kinship',
+            render: (val, row) => {
+                const kin = row.next_of_kin;
+                if (!kin) {
+                    return <span className="text-gray-400 italic">No kin on file</span>;
+                }
+
+                const name = getKinName(kin) || 'Unknown';
+                const address = getKinAddress(kin) || 'No address';
+                const phone = getKinPhone(kin) || 'No number';
+                const relationship = getKinRelationship(kin) || 'No relationship';
+
+                return (
+                    <div className="text-xs text-gray-500 whitespace-normal">
+                        <p className="text-gray-900 font-medium">{name}</p>
+                        <p>{address}</p>
+                        <p>{phone}</p>
+                        <p>{relationship}</p>
+                    </div>
+                );
+            },
+            exportValue: (row) => {
+                const kin = row.next_of_kin;
+                if (!kin) return 'No kin on file';
+                const name = getKinName(kin) || 'Unknown';
+                const address = getKinAddress(kin) || 'No address';
+                const phone = getKinPhone(kin) || 'No number';
+                const relationship = getKinRelationship(kin) || 'No relationship';
+                return [name, address, phone, relationship].join('\n');
+            },
+            searchValue: (row) => {
+                const kin = row.next_of_kin;
+                if (!kin) return '';
+                return [getKinName(kin), getKinAddress(kin), getKinPhone(kin), getKinRelationship(kin)]
+                    .filter(Boolean)
+                    .join(' ');
+            }
+        },
         { key: 'salary', label: 'Salary', render: (val) => `Ph ${val}` },
     ];
 
