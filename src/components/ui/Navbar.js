@@ -77,6 +77,7 @@ const ALL_MENUS = [
             { label: 'Property Assignments', href: '/Pages/Admin/Properties/Assignments', allowedRoles: MANAGER_UP },
             { label: 'Add New Property', href: '/Pages/Admin/Properties/Add', allowedRoles: MANAGER_UP },
             { label: 'Property Viewings', href: '/Pages/Admin/Properties/Viewings' },
+            { label: 'Maintenance', href: '/Pages/Admin/Maintenance' },
         ],
     },
     {
