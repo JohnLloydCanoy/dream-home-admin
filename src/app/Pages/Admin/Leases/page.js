@@ -90,6 +90,10 @@ function LeaseModal({ isOpen, onClose, onSuccess, itemToEdit }) {
         payload.duration = Number(payload.duration);
         payload.monthly_rent = Number(payload.monthly_rent);
         payload.deposit = Number(payload.deposit);
+        payload.property_no = payload.property || null;
+        payload.renter_no = payload.renter || null;
+        delete payload.property;
+        delete payload.renter;
         return payload;
     };
 
@@ -309,4 +313,4 @@ export default function LeaseAgreementsPage() {
             )}
         />
     );
-}
+}
