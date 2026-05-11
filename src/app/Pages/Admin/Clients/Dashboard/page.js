@@ -9,6 +9,7 @@ import FormField from '@/components/ui/FormField';
 import SearchBar from '@components/ui/SearchBar';
 import apiClient from '@/lib/apiClient';
 import { useForm } from '@/hooks/useForm';
+import { useRBAC } from '@/hooks/useRBAC';
 
 const roleOptions = [
     { value: 'Renter', label: 'Renter' },
@@ -213,6 +214,7 @@ function ClientModal({ isOpen, onClose, onSuccess, itemToEdit }) {
 
 export default function DashboardPage() {
     const [searchQuery, setSearchQuery] = useState('');
+    const rbac = useRBAC();
     const getFullName = (row) => `${row.last_name}, ${row.first_name} ${MITrimmer(row.middle_name)}. ${row.suffixes || ''}`.trim();
 
     const tableColumns = [
@@ -310,6 +312,7 @@ export default function DashboardPage() {
             searchQuery={searchQuery}
             searchKeys={['client_no', 'name', 'registered_branch', 'registered_staff', 'date_registered', 'role']}
             getDeleteModalItemName={(client) => `${client.first_name} ${client.last_name} (${client.role})`}
+            rbac={rbac}
             nameKey={['last_name', 'first_name']}
             dateKey="date_registered"
             sortNameLabel="Client Name"
