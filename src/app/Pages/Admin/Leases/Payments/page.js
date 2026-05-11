@@ -79,7 +79,7 @@ function PaymentModal({ isOpen, onClose, onSuccess, preselectedLease, itemToEdit
                         <option value="">— Select Lease —</option>
                         {leases.map(l => (
                             <option key={l.lease_no} value={l.lease_no}>
-                                Lease {l.lease_no} - {getRenterLabel(l.renter)}
+                                Lease {l.lease_no} - {getRenterLabel(l.renter_no)}
                             </option>
                         ))}
                     </FormField>
@@ -152,18 +152,18 @@ export default function PaymentsBalancesPage() {
             render: (val) => <span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded text-xs">{val}</span> 
         },
         { 
-            key: 'renter', 
+            key: 'renter_no', 
             label: 'Renter', 
             render: getRenterLabel,
-            exportValue: (row) => getRenterLabel(row.renter),
-            searchValue: (row) => getRenterLabel(row.renter)
+            exportValue: (row) => getRenterLabel(row.renter_no),
+            searchValue: (row) => getRenterLabel(row.renter_no)
         },
         { 
-            key: 'property', 
+            key: 'property_no', 
             label: 'Property', 
             render: getPropertyLabel,
-            exportValue: (row) => getPropertyLabel(row.property),
-            searchValue: (row) => getPropertyLabel(row.property)
+            exportValue: (row) => getPropertyLabel(row.property_no),
+            searchValue: (row) => getPropertyLabel(row.property_no)
         },
         { 
             key: 'rent_due', 
@@ -200,7 +200,7 @@ export default function PaymentsBalancesPage() {
             fetchData={fetchLedgerData} // 👈 Pass our custom merger function
             onRowClick={setSelectedLease} // 👈 Tracks row selection for the banner
             searchQuery={searchQuery}
-            searchKeys={['lease_no', 'renter', 'property']}
+            searchKeys={['lease_no', 'renter_no', 'property_no']}
             rbac={rbac}
             nameKey="lease_no"
             dateKey="last_payment_date"
@@ -276,7 +276,7 @@ export default function PaymentsBalancesPage() {
 
                         {selectedLease && (
                             <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-lg p-3 text-sm mb-4">
-                                Selected Lease: <strong>{selectedLease.lease_no}</strong> ({getRenterLabel(selectedLease.renter)})
+                                Selected Lease: <strong>{selectedLease.lease_no}</strong> ({getRenterLabel(selectedLease.renter_no)})
                             </div>
                         )}
                     </>
