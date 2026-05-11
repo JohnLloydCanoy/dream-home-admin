@@ -203,3 +203,14 @@ export const renterRequirementValidators = {
     max_monthly_rent:   { label: 'Max Monthly Rent', pattern: REGEX.MONEY, patternMessage: 'Must be a valid amount' },
     general_comments:   { label: 'General Comments' }
 };
+
+/**
+ * 💳 Payment Validation Rules
+ */
+export const paymentValidators = {
+    lease:          { required: true, label: 'Lease' },
+    amount_paid:    { required: true, label: 'Amount Paid', pattern: REGEX.MONEY, patternMessage: 'Must be a valid amount' },
+    payment_date:   { required: true, label: 'Payment Date', pattern: REGEX.DATE_YYYY_MM_DD, patternMessage: 'Date must be in YYYY-MM-DD format' },
+    payment_method: { required: true, label: 'Payment Method' }
+};
+
