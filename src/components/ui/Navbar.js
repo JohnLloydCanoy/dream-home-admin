@@ -115,6 +115,11 @@ const ManagementSideBar = () => {
     const router = useRouter();
     const [activeMenu, setActiveMenu] = useState(null);
     const { user: adminUser, isLoading: isLoadingAdmin, role: userRole } = useAuth();
+    const [mounted, setMounted] = React.useState(false);
+
+    React.useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const isActive = (path) => pathname === path;
 
@@ -132,6 +137,8 @@ const ManagementSideBar = () => {
     const visibleMenus = ALL_MENUS.filter(
         (menu) => !menu.allowedRoles || menu.allowedRoles.includes(userRole)
     );
+
+    if (!mounted) return <aside className="w-64 h-screen fixed top-0 left-0 bg-[#002147] border-r border-blue-900 z-50" />;
 
     return (
         <aside className="w-64 h-screen fixed top-0 left-0 bg-[#002147] text-white border-r border-blue-900 shadow-xl flex flex-col font-sans z-50">
