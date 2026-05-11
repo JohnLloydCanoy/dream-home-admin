@@ -5,8 +5,6 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 
-
-
 // Which roles can see each menu
 // "ADMIN"      → superuser, full access
 // "Manager"    → branch manager
