@@ -37,7 +37,6 @@ const ALL_MENUS = [
         allowedRoles: ADMIN_ONLY,   // ✅ Only ADMIN sees staff management
         items: [
             { label: 'Staff Directory', href: '/Pages/Admin/Staff' },
-            { label: 'Enroll New Staff', href: '/Pages/Admin/Staff/Enroll' },
             { label: 'Roles & Permissions', href: '/Pages/Admin/Staff/Roles' },
         ],
     },
