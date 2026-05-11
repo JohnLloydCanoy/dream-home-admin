@@ -3,7 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import CrudPageLayout from '@/components/layout/CrudPageLayout'; 
 import CrudFormModal from '@/components/layout/CrudFormModal';
+import ExportPDF from '@/components/ui/ExportPDF';
 import FormField from '@/components/ui/FormField';
+import SearchBar from '@components/ui/SearchBar';
 import apiClient from '@/lib/apiClient';
 import { useForm } from '@/hooks/useForm';
 import MITrimmer from '@/components/functions/MITrimmer';
@@ -202,12 +204,26 @@ function StaffModal({ isOpen, onClose, onSuccess, itemToEdit }) {
 // 🌟 2. Main Page Component
 export default function StaffDirectoryPage() {
     const [branches, setBranches] = useState([]);
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         apiClient('/branches/')
             .then((branchData) => setBranches(branchData.items || branchData))
             .catch((error) => console.error('Failed to load branches:', error));
     }, []);
+
+    const getBranchInfo = (value) => {
+        if (!value) return null;
+        if (typeof value === 'object') return value;
+        return branches.find((branch) => branch.branch_no === value) || null;
+    };
+
+    const getBranchAddress = (branchInfo) => {
+        if (!branchInfo) return '';
+        const line1 = [branchInfo.street, branchInfo.area].filter(Boolean).join(', ');
+        const line2 = [branchInfo.city, branchInfo.postcode].filter(Boolean).join(', ');
+        return [line1, line2].filter(Boolean).join('\n');
+    };
 
     const tableColumns = [
         { 
@@ -216,7 +232,9 @@ export default function StaffDirectoryPage() {
         },
         { 
             key: 'name', label: 'Full Name',
-            render: (val, row) => <span className="font-medium text-gray-900">{row.last_name}, {row.first_name} {MITrimmer(row.middle_name)}</span>
+            render: (val, row) => <span className="font-medium text-gray-900">{row.last_name}, {row.first_name} {MITrimmer(row.middle_name)}</span>,
+            exportValue: (row) => `${row.last_name}, ${row.first_name} ${MITrimmer(row.middle_name)}`.trim(),
+            searchValue: (row) => `${row.first_name} ${row.middle_name || ''} ${row.last_name}`.trim()
         },
         { 
             key: 'position', label: 'Position',
@@ -248,9 +266,7 @@ export default function StaffDirectoryPage() {
             render: (val) => {
                 if (!val) return 'Unassigned';
 
-                const branchInfo = typeof val === 'object'
-                    ? val
-                    : branches.find((branch) => branch.branch_no === val);
+                const branchInfo = getBranchInfo(val);
 
                 if (!branchInfo) {
                     return <span className="text-gray-900 font-medium">{val}</span>;
@@ -277,6 +293,17 @@ export default function StaffDirectoryPage() {
                         )}
                     </div>
                 );
+            },
+            exportValue: (row) => {
+                const branchInfo = getBranchInfo(row.branch);
+                const address = getBranchAddress(branchInfo);
+                if (!branchInfo) return row.branch || 'Unassigned';
+                return `${branchInfo.branch_no || 'Branch'}${address ? `\n${address}` : ''}`;
+            },
+            searchValue: (row) => {
+                const branchInfo = getBranchInfo(row.branch);
+                if (!branchInfo) return row.branch || '';
+                return `${branchInfo.branch_no} ${getBranchAddress(branchInfo)}`.trim();
             }
         },
         { key: 'telephone_no', label: 'Contact No.' },
@@ -291,7 +318,30 @@ export default function StaffDirectoryPage() {
             endpoint="/users/staff/"
             keyField="staff_no"
             columns={tableColumns}
+            searchQuery={searchQuery}
+            searchKeys={['staff_no', 'name', 'position', 'branch', 'telephone_no', 'salary']}
             getDeleteModalItemName={(staff) => `${staff.first_name} ${staff.last_name} (${staff.staff_no})`}
+            renderHeaderMiddle={() => (
+                <SearchBar
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    placeholder="Search staff..."
+                    className="w-full sm:max-w-sm"
+                    size="md"
+                />
+            )}
+            renderHeaderActions={(dataList) => (
+                <ExportPDF
+                    title="Staff Directory"
+                    subtitle="DreamHome employees, roles, and kinship profiles."
+                    fileName="staff-directory"
+                    columns={tableColumns}
+                    data={dataList}
+                    buttonLabel="Export PDF"
+                    buttonVariant="secondary"
+                    buttonSize="md"
+                />
+            )}
             
             // Render the local modal component defined above
             renderFormModal={({ isOpen, onClose, onSuccess, itemToEdit }) => (
