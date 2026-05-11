@@ -9,6 +9,7 @@ import SearchBar from '@components/ui/SearchBar';
 import apiClient from '@/lib/apiClient';
 import { useForm } from '@/hooks/useForm';
 import { advertisementValidators } from '@/lib/validator';
+import { useRBAC } from '@/hooks/useRBAC';
 
 // --- Helper Functions ---
 const normalizeList = (data) => data?.results || data?.items || data || [];
@@ -155,6 +156,7 @@ function AdvertisementModal({ isOpen, onClose, onSuccess, itemToEdit }) {
 // --- Main Component ---
 export default function AdvertisementPage() {
     const [searchQuery, setSearchQuery] = useState('');
+    const rbac = useRBAC();
 
     const tableColumns = [
         { 
@@ -232,6 +234,7 @@ export default function AdvertisementPage() {
             searchQuery={searchQuery}
             searchKeys={['id', 'title', 'message', 'status', 'placement']}
             getDeleteModalItemName={(ad) => `Advertisement ${ad.id} - ${ad.title}`.trim()}
+            rbac={rbac}
             nameKey="title"
             dateKey="start_date"
             sortNameLabel="Title"
