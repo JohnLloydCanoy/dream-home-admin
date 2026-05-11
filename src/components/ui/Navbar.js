@@ -85,8 +85,6 @@ const ALL_MENUS = [
         allowedRoles: ALL_STAFF,    // ✅ All staff can view clients
         items: [
             { label: 'Users Dashboard', href: '/Pages/Admin/Clients/Dashboard' },
-            { label: 'Renter Records', href: '/Pages/Admin/Clients/Renters' },
-            { label: 'Property Owners', href: '/Pages/Admin/Clients/Owners' },
             { label: 'Client Assignment', href: '/Pages/Admin/Clients/ClientAssignments', allowedRoles: MANAGER_UP },
             { label: 'Branch Registrations', href: '/Pages/Admin/Clients/Registrations', allowedRoles: MANAGER_UP },
         ],
