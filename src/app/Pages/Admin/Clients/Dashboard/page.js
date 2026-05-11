@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import CrudPageLayout from '@/components/layout/CrudPageLayout';
 import CrudFormModal from '@/components/layout/CrudFormModal';
+import MITrimmer from '@/components/functions/MITrimmer';
 import FormField from '@/components/ui/FormField';
 import { useForm } from '@/hooks/useForm';
 
@@ -130,7 +131,7 @@ export default function DashboardPage() {
         },
         {
             key: 'name', label: 'Full Name',
-            render: (val, row) => <span className="font-medium text-gray-900">{row.last_name}, {row.first_name} {row.middle_name || ''} {row.suffixes || ''}</span>
+            render: (val, row) => <span className="font-medium text-gray-900">{row.last_name}, {row.first_name} {MITrimmer(row.middle_name)}. {row.suffixes || ''}</span>
         },
         {
             key: 'email', label: 'Email',
