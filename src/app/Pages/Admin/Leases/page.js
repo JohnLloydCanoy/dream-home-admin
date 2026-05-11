@@ -241,6 +241,11 @@ export default function LeaseAgreementsPage() {
             searchQuery={searchQuery}
             searchKeys={['lease_no', 'property', 'renter', 'payment_method']}
             getDeleteModalItemName={(lease) => `Lease ${lease.lease_no || ''}`.trim()}
+            nameKey="lease_no"
+            dateKey="rent_start"
+            sortNameLabel="Lease No"
+            sortDateLabel="Start Date"
+            pageSize={5}
             
             renderHeaderMiddle={() => (
                 <SearchBar
