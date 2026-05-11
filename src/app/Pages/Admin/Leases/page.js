@@ -69,8 +69,8 @@ function LeaseModal({ isOpen, onClose, onSuccess, itemToEdit }) {
     }, [isOpen]);
 
     const { formData, errors, handleChange, validate, reset } = useForm({
-        property: toId(itemToEdit?.property, 'property_no'),
-        renter: toId(itemToEdit?.renter, 'client_no'),
+        property: toId(itemToEdit?.property_no, 'property_no'),
+        renter: toId(itemToEdit?.renter_no, 'client_no'),
         rent_start: itemToEdit?.rent_start || '',
         rent_finish: itemToEdit?.rent_finish || '',
         duration: itemToEdit?.duration || '',
@@ -191,18 +191,18 @@ export default function LeaseAgreementsPage() {
             render: (value) => <span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded text-xs">{value}</span>
         },
         { 
-            key: 'property', 
+            key: 'property_no', 
             label: 'Property', 
             render: (value) => getPropertyLabel(value),
-            exportValue: (row) => getPropertyLabel(row.property),
-            searchValue: (row) => getPropertyLabel(row.property)
+            exportValue: (row) => getPropertyLabel(row.property_no),
+            searchValue: (row) => getPropertyLabel(row.property_no)
         },
         { 
-            key: 'renter', 
+            key: 'renter_no', 
             label: 'Renter', 
             render: (value) => getRenterLabel(value),
-            exportValue: (row) => getRenterLabel(row.renter),
-            searchValue: (row) => getRenterLabel(row.renter)
+            exportValue: (row) => getRenterLabel(row.renter_no),
+            searchValue: (row) => getRenterLabel(row.renter_no)
         },
         { 
             key: 'monthly_rent', 
@@ -243,7 +243,7 @@ export default function LeaseAgreementsPage() {
             keyField="lease_no"
             columns={tableColumns}
             searchQuery={searchQuery}
-            searchKeys={['lease_no', 'property', 'renter', 'payment_method']}
+            searchKeys={['lease_no', 'property_no', 'renter_no', 'payment_method']}
             getDeleteModalItemName={(lease) => `Lease ${lease.lease_no || ''}`.trim()}
             nameKey="lease_no"
             dateKey="rent_start"
