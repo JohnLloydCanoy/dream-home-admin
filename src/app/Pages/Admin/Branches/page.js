@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import CrudPageLayout from '@/components/layout/CrudPageLayout';
 import CrudFormModal from '@/components/layout/CrudFormModal';
 import ExportPDF from '@/components/ui/ExportPDF';
@@ -9,6 +9,7 @@ import SearchBar from '@components/ui/SearchBar';
 import apiClient from '@/lib/apiClient';
 import { useForm } from '@/hooks/useForm';
 import { branchValidators } from '@/lib/validator';
+import { useRBAC } from '@/hooks/useRBAC';
 
 // define the Form Modal right here in the same file!
 function BranchModal({ isOpen, onClose, onSuccess, itemToEdit }) {
@@ -107,6 +108,18 @@ function BranchModal({ isOpen, onClose, onSuccess, itemToEdit }) {
 
 export default function BranchesPage() {
     const [searchQuery, setSearchQuery] = useState('');
+    const rbac = useRBAC();
+
+    // Branch-specific RBAC: only ADMIN can mutate branches
+    const branchRbac = useMemo(() => ({
+        ...rbac,
+        canCreate: rbac.canMutateBranches,
+        canEdit: rbac.canMutateBranches,
+        canDelete: rbac.canMutateBranches,
+        // All roles that can see this page can view ALL branches (no branch filtering)
+        filterByBranch: (data) => data,
+    }), [rbac]);
+
     const buildBranchAddress = (row) => [row.street, row.area, row.city, row.postcode].filter(Boolean).join(', ');
     const getManagerName = (manager) => {
         if (!manager) return 'Unassigned';
@@ -155,6 +168,7 @@ export default function BranchesPage() {
             searchQuery={searchQuery}
             searchKeys={['branch_no', 'street', 'area', 'city', 'postcode', 'telephone_no', 'manager']}
             getDeleteModalItemName={(branch) => `Branch ${branch.branch_no} - ${branch.city}`}
+            rbac={branchRbac}
             nameKey="city"
             sortNameLabel="City"
             pageSize={5}
