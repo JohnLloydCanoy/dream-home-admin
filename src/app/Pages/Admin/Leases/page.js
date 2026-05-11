@@ -1,10 +1,24 @@
 'use client';
 
-import React from 'react';
-import CrudPageLayout from '@/components/layout/CrudPageLayout'; // Adjust path
-
+import React, { useState, useEffect } from 'react';
+import CrudPageLayout from '@/components/layout/CrudPageLayout';
+import CrudFormModal from '@/components/layout/CrudFormModal';
+import ExportPDF from '@/components/ui/ExportPDF';
+import FormField from '@/components/ui/FormField';
+import SearchBar from '@components/ui/SearchBar';
+import apiClient from '@/lib/apiClient';
+import { useForm } from '@/hooks/useForm';
+import { leaseValidators } from '@/lib/validator';
 
 // --- Helper Functions ---
+const normalizeList = (data) => data?.results || data?.items || data || [];
+
+const toId = (value, idField) => {
+    if (!value) return '';
+    if (typeof value === 'object') return value[idField] || '';
+    return value;
+};
+
 const getPropertyLabel = (value) => {
     if (!value) return 'N/A';
     if (typeof value === 'object') {
@@ -32,24 +46,188 @@ const formatCurrency = (value) => {
     return `₱${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
-const getStartDate = (lease) => lease?.start_date || lease?.rent_start || 'N/A';
-const getEndDate = (lease) => lease?.end_date || lease?.rent_finish || 'N/A';
+const getStartDate = (lease) => lease?.rent_start || lease?.start_date || 'N/A';
+const getEndDate = (lease) => lease?.rent_finish || lease?.end_date || 'N/A';
+
+// --- Form Modal Component ---
+function LeaseModal({ isOpen, onClose, onSuccess, itemToEdit }) {
+    const [properties, setProperties] = useState([]);
+    const [renters, setRenters] = useState([]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        Promise.all([
+            apiClient('/properties/'),
+            apiClient('/users/clients/?role=Renter')
+        ])
+            .then(([propData, renterData]) => {
+                setProperties(normalizeList(propData));
+                setRenters(normalizeList(renterData));
+            })
+            .catch(err => console.error("Failed to load options:", err));
+    }, [isOpen]);
+
+    const { formData, errors, handleChange, validate, reset } = useForm({
+        property: toId(itemToEdit?.property, 'property_no'),
+        renter: toId(itemToEdit?.renter, 'client_no'),
+        rent_start: itemToEdit?.rent_start || '',
+        rent_finish: itemToEdit?.rent_finish || '',
+        duration: itemToEdit?.duration || '',
+        monthly_rent: itemToEdit?.monthly_rent || '',
+        payment_method: itemToEdit?.payment_method || '',
+        deposit: itemToEdit?.deposit || '',
+        deposit_paid: itemToEdit?.deposit_paid || false
+    }, leaseValidators);
+
+    useEffect(() => {
+        if (isOpen) reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [itemToEdit?.lease_no, isOpen]);
+
+    const formatPayload = (data) => {
+        const payload = { ...data };
+        payload.duration = Number(payload.duration);
+        payload.monthly_rent = Number(payload.monthly_rent);
+        payload.deposit = Number(payload.deposit);
+        return payload;
+    };
+
+    return (
+        <CrudFormModal
+            isOpen={isOpen}
+            onClose={onClose}
+            onSuccess={onSuccess}
+            title={itemToEdit ? `Edit Lease ${itemToEdit.lease_no}` : "Create New Lease"}
+            baseEndpoint="/leases"
+            itemId={itemToEdit?.lease_no}
+            formData={formData}
+            validate={validate}
+            transformPayload={formatPayload}
+            submitLabel="Save Lease"
+            updateLabel="Update Lease"
+        >
+            <section>
+                <h3 className="text-sm font-bold text-[#002147] border-b pb-2 mb-4 flex items-center gap-2">
+                    <span className="bg-[#002147] text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px]">1</span>
+                    Parties & Property
+                </h3>
+                <div className="grid grid-cols-1 gap-4">
+                    <FormField label="Property" field="property" type="select" value={formData.property} onChange={handleChange} error={errors.property}>
+                        <option value="">— Select Property —</option>
+                        {properties.map(p => (
+                            <option key={p.property_no} value={p.property_no}>
+                                {getPropertyLabel(p)}
+                            </option>
+                        ))}
+                    </FormField>
+                    <FormField label="Renter" field="renter" type="select" value={formData.renter} onChange={handleChange} error={errors.renter}>
+                        <option value="">— Select Renter —</option>
+                        {renters.map(r => (
+                            <option key={r.client_no} value={r.client_no}>
+                                {getRenterLabel(r)}
+                            </option>
+                        ))}
+                    </FormField>
+                </div>
+            </section>
+
+            <section className="mt-6">
+                <h3 className="text-sm font-bold text-[#002147] border-b pb-2 mb-4 flex items-center gap-2">
+                    <span className="bg-[#002147] text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px]">2</span>
+                    Lease Terms
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField label="Start Date" field="rent_start" type="date" value={formData.rent_start} onChange={handleChange} error={errors.rent_start} />
+                    <FormField label="End Date" field="rent_finish" type="date" value={formData.rent_finish} onChange={handleChange} error={errors.rent_finish} />
+                    <FormField label="Duration (Months)" field="duration" type="number" value={formData.duration} onChange={handleChange} error={errors.duration} placeholder="e.g. 12" />
+                </div>
+            </section>
+
+            <section className="mt-6">
+                <h3 className="text-sm font-bold text-[#002147] border-b pb-2 mb-4 flex items-center gap-2">
+                    <span className="bg-[#002147] text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px]">3</span>
+                    Financials
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField label="Monthly Rent" field="monthly_rent" type="number" value={formData.monthly_rent} onChange={handleChange} error={errors.monthly_rent} placeholder="₱" />
+                    <FormField label="Deposit Amount" field="deposit" type="number" value={formData.deposit} onChange={handleChange} error={errors.deposit} placeholder="₱" />
+                    <FormField label="Payment Method" field="payment_method" type="select" value={formData.payment_method} onChange={handleChange} error={errors.payment_method}>
+                        <option value="">— Select Method —</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Credit Card">Credit Card</option>
+                        <option value="Cheque">Cheque</option>
+                    </FormField>
+                </div>
+                <div className="mt-4 flex items-center gap-2 bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+                    <input
+                        type="checkbox"
+                        id="deposit_paid"
+                        name="deposit_paid"
+                        checked={formData.deposit_paid}
+                        onChange={(e) => handleChange({ target: { name: 'deposit_paid', value: e.target.checked } })}
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                    />
+                    <label htmlFor="deposit_paid" className="text-sm text-gray-700 font-medium">Deposit has been paid by renter</label>
+                </div>
+            </section>
+        </CrudFormModal>
+    );
+}
 
 // --- Main Page Component ---
 export default function LeaseAgreementsPage() {
+    const [searchQuery, setSearchQuery] = useState('');
+
     const tableColumns = [
         {
             key: 'lease_no',
             label: 'Lease No',
             render: (value) => <span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded text-xs">{value}</span>
         },
-        { key: 'property', label: 'Property', render: (value) => getPropertyLabel(value) },
-        { key: 'renter', label: 'Renter', render: (value) => getRenterLabel(value) },
-        { key: 'monthly_rent', label: 'Monthly Rent', render: (value) => formatCurrency(value) },
-        { key: 'deposit', label: 'Deposit', render: (value) => formatCurrency(value) },
-        { key: 'payment_method', label: 'Payment Method', render: (value) => value || 'N/A' },
-        { key: 'duration', label: 'Duration', render: (value) => `${value || 'N/A'} month(s)` },
-        { key: 'term', label: 'Term', render: (_, row) => `${getStartDate(row)} to ${getEndDate(row)}` }
+        { 
+            key: 'property', 
+            label: 'Property', 
+            render: (value) => getPropertyLabel(value),
+            exportValue: (row) => getPropertyLabel(row.property),
+            searchValue: (row) => getPropertyLabel(row.property)
+        },
+        { 
+            key: 'renter', 
+            label: 'Renter', 
+            render: (value) => getRenterLabel(value),
+            exportValue: (row) => getRenterLabel(row.renter),
+            searchValue: (row) => getRenterLabel(row.renter)
+        },
+        { 
+            key: 'monthly_rent', 
+            label: 'Monthly Rent', 
+            render: (value) => formatCurrency(value),
+            exportValue: (row) => formatCurrency(row.monthly_rent)
+        },
+        { 
+            key: 'deposit', 
+            label: 'Deposit', 
+            render: (value) => formatCurrency(value),
+            exportValue: (row) => formatCurrency(row.deposit)
+        },
+        { 
+            key: 'payment_method', 
+            label: 'Payment Method', 
+            render: (value) => value || 'N/A' 
+        },
+        { 
+            key: 'duration', 
+            label: 'Duration', 
+            render: (value) => `${value || 'N/A'} month(s)` 
+        },
+        { 
+            key: 'term', 
+            label: 'Term', 
+            render: (_, row) => `${getStartDate(row)} to ${getEndDate(row)}`,
+            exportValue: (row) => `${getStartDate(row)} to ${getEndDate(row)}`
+        }
     ];
 
     return (
@@ -60,8 +238,33 @@ export default function LeaseAgreementsPage() {
             endpoint="/leases/"
             keyField="lease_no"
             columns={tableColumns}
+            searchQuery={searchQuery}
+            searchKeys={['lease_no', 'property', 'renter', 'payment_method']}
             getDeleteModalItemName={(lease) => `Lease ${lease.lease_no || ''}`.trim()}
             
+            renderHeaderMiddle={() => (
+                <SearchBar
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    placeholder="Search leases..."
+                    className="w-full sm:max-w-sm"
+                    size="md"
+                />
+            )}
+            
+            renderHeaderActions={(dataList) => (
+                <ExportPDF
+                    title="Lease Agreements"
+                    subtitle="Rental contracts between available properties and renter clients."
+                    fileName="leases"
+                    columns={tableColumns}
+                    data={dataList}
+                    buttonLabel="Export PDF"
+                    buttonVariant="secondary"
+                    buttonSize="md"
+                />
+            )}
+
             // 🌟 Inject the Summary Cards dynamically based on the fetched data
             renderTopContent={(leases) => {
                 const totalMonthlyRent = leases.reduce((accumulator, lease) => accumulator + (Number(lease.monthly_rent) || 0), 0);
@@ -92,13 +295,13 @@ export default function LeaseAgreementsPage() {
 
             // Form Modal Injection
             renderFormModal={({ isOpen, onClose, onSuccess, itemToEdit }) => (
-                <LeaseFormModal
+                <LeaseModal
                     isOpen={isOpen}
                     onClose={onClose}
                     onSuccess={onSuccess}
-                    leaseToEdit={itemToEdit}
+                    itemToEdit={itemToEdit}
                 />
             )}
         />
     );
-}
+}
