@@ -214,3 +214,19 @@ export const paymentValidators = {
     payment_method: { required: true, label: 'Payment Method' }
 };
 
+/**
+ * 📢 Advertisement Validation Rules
+ */
+export const advertisementValidators = {
+    property_no: { label: 'Property' },
+    title:       { required: true, maxLength: 200, label: 'Title' },
+    message:     { required: true, label: 'Message' },
+    status:      { required: true, label: 'Status' },
+    start_date:  { required: true, label: 'Start Date', pattern: REGEX.DATE_YYYY_MM_DD, patternMessage: 'Date must be in YYYY-MM-DD format' },
+    end_date:    { required: true, label: 'End Date', pattern: REGEX.DATE_YYYY_MM_DD, patternMessage: 'Date must be in YYYY-MM-DD format' },
+    priority:    { required: true, label: 'Priority', pattern: REGEX.WHOLE_NUMBER, patternMessage: 'Priority must be a valid whole number' },
+    placement:   { required: true, label: 'Placement' },
+    assigned_by: { label: 'Assigned By' }
+};
+
+
