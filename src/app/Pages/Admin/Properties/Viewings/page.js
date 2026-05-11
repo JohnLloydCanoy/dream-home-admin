@@ -63,12 +63,55 @@ const renderNameWithId = (name, id) => (
 );
 
 const getViewingDate = (row) => row.view_date || row.viewing_date || 'N/A';
+const formatDateTime = (value) => {
+    if (!value) return 'N/A';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString();
+};
 
-function ViewingModal({ isOpen, onClose, onSuccess, itemToEdit, properties, renters }) {
+const viewingStatusOptions = [
+    { value: 'Requested', label: 'Requested' },
+    { value: 'Approved', label: 'Approved' },
+    { value: 'Rejected', label: 'Rejected' },
+    { value: 'Cancelled', label: 'Cancelled' }
+];
+
+const getStatusBadge = (status) => {
+    const colors = {
+        Requested: 'bg-amber-100 text-amber-800',
+        Approved: 'bg-green-100 text-green-800',
+        Rejected: 'bg-red-100 text-red-800',
+        Cancelled: 'bg-gray-100 text-gray-700'
+    };
+
+    return (
+        <span className={`px-3 py-1 rounded-full text-xs font-bold ${colors[status] || 'bg-gray-100 text-gray-700'}`}>
+            {status || 'N/A'}
+        </span>
+    );
+};
+
+const getStaffDisplay = (value, lookupMap) => {
+    if (!value) return { name: 'Unassigned', id: '' };
+    if (typeof value === 'object') {
+        return { name: getPersonName(value) || 'Unknown Staff', id: value.staff_no || value.id || '' };
+    }
+
+    const match = lookupMap?.get(value);
+    if (match) {
+        return { name: getPersonName(match) || 'Unknown Staff', id: match.staff_no || String(value) };
+    }
+
+    return { name: 'Unknown Staff', id: String(value) };
+};
+
+function ViewingModal({ isOpen, onClose, onSuccess, itemToEdit, properties, renters, staffById }) {
     const { formData, errors, handleChange, validate, reset } = useForm({
         property_no: toId(itemToEdit?.property_no || itemToEdit?.property, 'property_no'),
         renter_no: toId(itemToEdit?.renter_no || itemToEdit?.renter || itemToEdit?.client, 'client_no'),
         view_date: itemToEdit?.view_date || itemToEdit?.viewing_date || '',
+        status: itemToEdit?.status || 'Requested',
         comments: itemToEdit?.comments || ''
     }, viewingValidators);
 
@@ -82,9 +125,14 @@ function ViewingModal({ isOpen, onClose, onSuccess, itemToEdit, properties, rent
         payload.property_no = payload.property_no || null;
         payload.renter_no = payload.renter_no || null;
         payload.view_date = payload.view_date || null;
+        payload.status = payload.status || 'Requested';
         payload.comments = payload.comments?.trim() || null;
         return payload;
     };
+
+    const decisionDisplay = itemToEdit
+        ? getStaffDisplay(itemToEdit.decided_by, staffById)
+        : { name: 'Unassigned', id: '' };
 
     return (
         <CrudFormModal
@@ -120,9 +168,32 @@ function ViewingModal({ isOpen, onClose, onSuccess, itemToEdit, properties, rent
                         ))}
                     </FormField>
                     <FormField label="Viewing Date" field="view_date" type="date" value={formData.view_date} onChange={handleChange} error={errors.view_date} />
+                    <FormField label="Status" field="status" type="select" value={formData.status} onChange={handleChange} error={errors.status}>
+                        {viewingStatusOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
+                    </FormField>
                     <FormField label="Comments" field="comments" type="textarea" value={formData.comments} onChange={handleChange} required={false} className="col-span-2" />
                 </div>
             </section>
+
+            {itemToEdit && (
+                <section>
+                    <h3 className="text-sm font-bold text-[#002147] border-b pb-2 mb-4">Decision Info</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="flex flex-col gap-1">
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-600">Decided By</span>
+                            {renderNameWithId(decisionDisplay.name, decisionDisplay.id)}
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-600">Decided At</span>
+                            <span className="text-gray-700">{formatDateTime(itemToEdit.decided_at)}</span>
+                        </div>
+                    </div>
+                </section>
+            )}
         </CrudFormModal>
     );
 }
@@ -131,18 +202,21 @@ export default function PropertyViewingsPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [properties, setProperties] = useState([]);
     const [renters, setRenters] = useState([]);
+    const [staffList, setStaffList] = useState([]);
 
     useEffect(() => {
         let isActive = true;
 
         Promise.all([
             apiClient('/properties/'),
-            apiClient('/users/clients/?role=Renter')
+            apiClient('/users/clients/?role=Renter'),
+            apiClient('/users/staff/')
         ])
-            .then(([propertiesData, rentersData]) => {
+            .then(([propertiesData, rentersData, staffData]) => {
                 if (!isActive) return;
                 setProperties(normalizeList(propertiesData));
                 setRenters(normalizeList(rentersData));
+                setStaffList(normalizeList(staffData));
             })
             .catch((error) => console.error('Failed to load viewing references:', error));
 
@@ -158,6 +232,10 @@ export default function PropertyViewingsPage() {
     const rentersById = useMemo(
         () => new Map(renters.map((renter) => [renter.client_no, renter])),
         [renters]
+    );
+    const staffById = useMemo(
+        () => new Map(staffList.map((staff) => [staff.staff_no, staff])),
+        [staffList]
     );
 
     const tableColumns = [
@@ -210,6 +288,36 @@ export default function PropertyViewingsPage() {
             searchValue: (row) => getViewingDate(row)
         },
         {
+            key: 'status',
+            label: 'Status',
+            render: (value) => getStatusBadge(value),
+            exportValue: (row) => row.status || 'N/A',
+            searchValue: (row) => row.status || ''
+        },
+        {
+            key: 'decided_by',
+            label: 'Decided By',
+            render: (value) => {
+                const display = getStaffDisplay(value, staffById);
+                return renderNameWithId(display.name, display.id);
+            },
+            exportValue: (row) => {
+                const display = getStaffDisplay(row.decided_by, staffById);
+                return [display.name, display.id].filter(Boolean).join('\n');
+            },
+            searchValue: (row) => {
+                const display = getStaffDisplay(row.decided_by, staffById);
+                return `${display.name} ${display.id}`.trim();
+            }
+        },
+        {
+            key: 'decided_at',
+            label: 'Decided At',
+            render: (value) => <span className="text-gray-700">{formatDateTime(value)}</span>,
+            exportValue: (row) => formatDateTime(row.decided_at),
+            searchValue: (row) => formatDateTime(row.decided_at)
+        },
+        {
             key: 'comments',
             label: 'Comments',
             render: (value) => {
@@ -229,7 +337,7 @@ export default function PropertyViewingsPage() {
             keyField="id"
             columns={tableColumns}
             searchQuery={searchQuery}
-            searchKeys={['id', 'property_no', 'renter_no', 'view_date', 'comments']}
+            searchKeys={['id', 'property_no', 'renter_no', 'view_date', 'status', 'decided_by', 'decided_at', 'comments']}
             getDeleteModalItemName={(viewing) => `Viewing #${getViewingId(viewing) || 'N/A'}`}
             renderHeaderMiddle={() => (
                 <SearchBar
@@ -260,6 +368,7 @@ export default function PropertyViewingsPage() {
                     itemToEdit={itemToEdit}
                     properties={properties}
                     renters={renters}
+                    staffById={staffById}
                 />
             )}
         />
