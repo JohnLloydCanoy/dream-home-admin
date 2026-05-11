@@ -374,6 +374,11 @@ export default function StaffDirectoryPage() {
             searchQuery={searchQuery}
             searchKeys={['staff_no', 'name', 'position', 'branch', 'telephone_no', 'salary']}
             getDeleteModalItemName={(staff) => `${staff.first_name} ${staff.last_name} (${staff.staff_no})`}
+            nameKey={['last_name', 'first_name']}
+            dateKey="date_joined"
+            sortNameLabel="Staff Name"
+            sortDateLabel="Date Joined"
+            pageSize={10}
             renderHeaderMiddle={() => (
                 <SearchBar
                     value={searchQuery}
