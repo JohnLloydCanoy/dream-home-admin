@@ -130,7 +130,7 @@ export default function DashboardPage() {
         },
         {
             key: 'name', label: 'Full Name',
-            render: (val, row) => <span className="font-medium text-gray-900">{row.first_name} {row.last_name}</span>
+            render: (val, row) => <span className="font-medium text-gray-900">{row.last_name}, {row.first_name} {row.middle_name || ''} {row.suffixes || ''}</span>
         },
         {
             key: 'email', label: 'Email',
