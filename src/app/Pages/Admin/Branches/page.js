@@ -155,6 +155,8 @@ export default function BranchesPage() {
             searchQuery={searchQuery}
             searchKeys={['branch_no', 'street', 'area', 'city', 'postcode', 'telephone_no', 'manager']}
             getDeleteModalItemName={(branch) => `Branch ${branch.branch_no} - ${branch.city}`}
+            nameKey="city"
+            sortNameLabel="City"
             renderHeaderMiddle={() => (
                 <SearchBar
                     value={searchQuery}
