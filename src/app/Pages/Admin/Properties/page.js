@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import CrudPageLayout from '@/components/layout/CrudPageLayout';
 import CrudFormModal from '@/components/layout/CrudFormModal';
 import ExportPDF from '@/components/ui/ExportPDF';
@@ -18,33 +18,55 @@ const toId = (value, idField) => {
     return value;
 };
 
-const getOwnerLabel = (owner) => {
-    if (!owner) return 'Unassigned';
-    if (typeof owner === 'object') {
-        const fullName = `${owner.first_name || ''} ${owner.last_name || ''}`.trim();
-        return fullName ? `${fullName} (${owner.client_no || ''})`.trim() : owner.client_no || 'Unassigned';
+const getPersonName = (person) => `${person?.first_name || ''} ${person?.last_name || ''}`.trim();
+
+const getPersonDisplay = (value, lookupMap, idField, fallbackName) => {
+    if (!value) return { name: 'Unassigned', id: '' };
+    if (typeof value === 'object') {
+        const name = getPersonName(value);
+        const id = value[idField] || '';
+        if (!name && !id) return { name: 'Unassigned', id: '' };
+        return { name: name || fallbackName, id };
     }
-    return owner;
+
+    const match = lookupMap?.get(value);
+    if (match) {
+        const name = getPersonName(match);
+        const id = match[idField] || String(value);
+        return { name: name || fallbackName, id };
+    }
+
+    return { name: fallbackName, id: String(value) };
 };
 
-const getStaffLabel = (staff) => {
-    if (!staff) return 'Unassigned';
-    if (typeof staff === 'object') {
-        const fullName = `${staff.first_name || ''} ${staff.last_name || ''}`.trim();
-        return fullName ? `${fullName} (${staff.staff_no || ''})`.trim() : staff.staff_no || 'Unassigned';
+const getBranchDisplay = (value, lookupMap) => {
+    if (!value) return { name: 'Unassigned', id: '' };
+    if (typeof value === 'object') {
+        const name = value.city || value.street || 'Branch';
+        const id = value.branch_no || '';
+        return { name: name || 'Branch', id };
     }
-    return staff;
+
+    const match = lookupMap?.get(value);
+    if (match) {
+        const name = match.city || match.street || 'Branch';
+        const id = match.branch_no || String(value);
+        return { name: name || 'Branch', id };
+    }
+
+    return { name: 'Unknown Branch', id: String(value) };
 };
 
-const getBranchLabel = (branch) => {
-    if (!branch) return 'Unassigned';
-    if (typeof branch === 'object') {
-        const branchNo = branch.branch_no || '';
-        const city = branch.city || '';
-        if (branchNo && city) return `${branchNo} - ${city}`;
-        return branchNo || city || 'Unassigned';
-    }
-    return branch;
+const renderNameWithId = (name, id) => {
+    const isUnassigned = name === 'Unassigned';
+    return (
+        <div className="flex flex-col gap-1">
+            <span className={isUnassigned ? 'text-gray-400 italic' : 'text-gray-900 font-medium'}>
+                {name}
+            </span>
+            {id ? <span className="text-xs text-gray-400">{id}</span> : null}
+        </div>
+    );
 };
 
 const getAddressLabel = (property) => {
@@ -230,6 +252,34 @@ function PropertyModal({ isOpen, onClose, onSuccess, itemToEdit }) {
 
 export default function PropertiesPage() {
     const [searchQuery, setSearchQuery] = useState('');
+    const [owners, setOwners] = useState([]);
+    const [branches, setBranches] = useState([]);
+    const [staffList, setStaffList] = useState([]);
+
+    useEffect(() => {
+        let isActive = true;
+
+        Promise.all([
+            apiClient('/users/clients/?role=Owner'),
+            apiClient('/branches/'),
+            apiClient('/users/staff/')
+        ])
+            .then(([ownersData, branchData, staffData]) => {
+                if (!isActive) return;
+                setOwners(normalizeList(ownersData));
+                setBranches(normalizeList(branchData));
+                setStaffList(normalizeList(staffData));
+            })
+            .catch((error) => console.error('Failed to load property references:', error));
+
+        return () => {
+            isActive = false;
+        };
+    }, []);
+
+    const ownersById = useMemo(() => new Map(owners.map((owner) => [owner.client_no, owner])), [owners]);
+    const staffById = useMemo(() => new Map(staffList.map((staff) => [staff.staff_no, staff])), [staffList]);
+    const branchesById = useMemo(() => new Map(branches.map((branch) => [branch.branch_no, branch])), [branches]);
 
     const tableColumns = [
         {
@@ -292,35 +342,50 @@ export default function PropertiesPage() {
         {
             key: 'owner_no',
             label: 'Owner',
-            render: (value) => (
-                <span className={value ? 'text-gray-900 font-medium' : 'text-gray-400 italic'}>
-                    {getOwnerLabel(value)}
-                </span>
-            ),
-            exportValue: (row) => getOwnerLabel(row.owner_no || row.owner),
-            searchValue: (row) => getOwnerLabel(row.owner_no || row.owner)
+            render: (_, row) => {
+                const display = getPersonDisplay(row.owner_no || row.owner, ownersById, 'client_no', 'Unknown Owner');
+                return renderNameWithId(display.name, display.id);
+            },
+            exportValue: (row) => {
+                const display = getPersonDisplay(row.owner_no || row.owner, ownersById, 'client_no', 'Unknown Owner');
+                return [display.name, display.id].filter(Boolean).join('\n');
+            },
+            searchValue: (row) => {
+                const display = getPersonDisplay(row.owner_no || row.owner, ownersById, 'client_no', 'Unknown Owner');
+                return `${display.name} ${display.id}`.trim();
+            }
         },
         {
             key: 'staff_no',
             label: 'Staff',
-            render: (value) => (
-                <span className={value ? 'text-gray-900 font-medium' : 'text-gray-400 italic'}>
-                    {getStaffLabel(value)}
-                </span>
-            ),
-            exportValue: (row) => getStaffLabel(row.staff_no || row.staff),
-            searchValue: (row) => getStaffLabel(row.staff_no || row.staff)
+            render: (_, row) => {
+                const display = getPersonDisplay(row.staff_no || row.staff, staffById, 'staff_no', 'Unknown Staff');
+                return renderNameWithId(display.name, display.id);
+            },
+            exportValue: (row) => {
+                const display = getPersonDisplay(row.staff_no || row.staff, staffById, 'staff_no', 'Unknown Staff');
+                return [display.name, display.id].filter(Boolean).join('\n');
+            },
+            searchValue: (row) => {
+                const display = getPersonDisplay(row.staff_no || row.staff, staffById, 'staff_no', 'Unknown Staff');
+                return `${display.name} ${display.id}`.trim();
+            }
         },
         {
             key: 'branch_no',
             label: 'Branch',
-            render: (value) => (
-                <span className={value ? 'text-gray-900 font-medium' : 'text-gray-400 italic'}>
-                    {getBranchLabel(value)}
-                </span>
-            ),
-            exportValue: (row) => getBranchLabel(row.branch_no || row.branch),
-            searchValue: (row) => getBranchLabel(row.branch_no || row.branch)
+            render: (_, row) => {
+                const display = getBranchDisplay(row.branch_no || row.branch, branchesById);
+                return renderNameWithId(display.name, display.id);
+            },
+            exportValue: (row) => {
+                const display = getBranchDisplay(row.branch_no || row.branch, branchesById);
+                return [display.name, display.id].filter(Boolean).join('\n');
+            },
+            searchValue: (row) => {
+                const display = getBranchDisplay(row.branch_no || row.branch, branchesById);
+                return `${display.name} ${display.id}`.trim();
+            }
         },
         {
             key: 'date_withdrawn',
