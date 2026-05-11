@@ -2,7 +2,7 @@
 
 import React from 'react';
 import CrudPageLayout from '@/components/layout/CrudPageLayout'; // Adjust path
-import LeaseFormModal from '@/components/ui/LeaseFormModal';
+
 
 // --- Helper Functions ---
 const getPropertyLabel = (value) => {
