@@ -127,9 +127,9 @@ export function useRBAC() {
 
                 return data.filter((row) => {
                     const rowBranch = resolveBranch(row);
-                    // If we can't resolve a branch, keep the row visible
-                    // (better to over-show than hide data the user should see)
-                    if (!rowBranch) return true;
+                    // Hide data that has no branch assigned from branch-specific users.
+                    // Only ADMINs can see unregistered data now.
+                    if (!rowBranch) return false;
                     return rowBranch === branchCode;
                 });
             },
