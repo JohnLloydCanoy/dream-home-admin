@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import CrudPageLayout from '@/components/layout/CrudPageLayout'; 
-import CrudFormModal from '@/components/ui/CrudFormModal';
+import CrudFormModal from '@/components/layout/CrudFormModal';
 import FormField from '@/components/ui/FormField';
 import apiClient from '@/lib/apiClient';
 import { useForm } from '@/hooks/useForm';
