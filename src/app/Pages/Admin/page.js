@@ -194,19 +194,19 @@ export default function AdminPage() {
         {
             label: 'Register Client',
             description: 'Add a new renter profile and preference details.',
-            href: '/Pages/Admin/Clients/Renters',
+            href: '/Pages/Admin/Clients/Dashboard',
             variant: 'secondary'
         },
         {
             label: 'Log Payment',
             description: 'Record a lease payment and refresh balances.',
-            href: '/Pages/Admin/LeasesFinancials/PaymentsBalances',
+            href: '/Pages/Admin/Leases/Payments',
             variant: 'secondary'
         },
         {
             label: 'Create Lease',
             description: 'Generate a new rental contract quickly.',
-            href: '/Pages/Admin/LeasesFinancials/LeaseAgreements',
+            href: '/Pages/Admin/Leases',
             variant: 'secondary'
         }
     ];
