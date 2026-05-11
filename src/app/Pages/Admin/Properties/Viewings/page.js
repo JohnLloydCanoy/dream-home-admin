@@ -339,6 +339,9 @@ export default function PropertyViewingsPage() {
             searchQuery={searchQuery}
             searchKeys={['id', 'property_no', 'renter_no', 'view_date', 'status', 'decided_by', 'decided_at', 'comments']}
             getDeleteModalItemName={(viewing) => `Viewing #${getViewingId(viewing) || 'N/A'}`}
+            dateKey="view_date"
+            sortDateLabel="Viewing Date"
+            pageSize={5}
             renderHeaderMiddle={() => (
                 <SearchBar
                     value={searchQuery}

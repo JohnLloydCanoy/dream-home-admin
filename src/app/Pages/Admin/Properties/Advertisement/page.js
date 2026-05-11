@@ -232,6 +232,11 @@ export default function AdvertisementPage() {
             searchQuery={searchQuery}
             searchKeys={['id', 'title', 'message', 'status', 'placement']}
             getDeleteModalItemName={(ad) => `Advertisement ${ad.id} - ${ad.title}`.trim()}
+            nameKey="title"
+            dateKey="start_date"
+            sortNameLabel="Title"
+            sortDateLabel="Start Date"
+            pageSize={5}
             
             renderHeaderMiddle={() => (
                 <SearchBar
