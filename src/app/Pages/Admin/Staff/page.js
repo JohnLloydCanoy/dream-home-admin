@@ -378,7 +378,7 @@ export default function StaffDirectoryPage() {
             dateKey="date_joined"
             sortNameLabel="Staff Name"
             sortDateLabel="Date Joined"
-            pageSize={10}
+            pageSize={5}
             renderHeaderMiddle={() => (
                 <SearchBar
                     value={searchQuery}

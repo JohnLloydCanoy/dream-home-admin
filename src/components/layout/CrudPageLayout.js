@@ -4,7 +4,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import DataTable from '@/components/ui/DataTable';
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal';
 import SortControls from '@/components/ui/Sorting';
+import PaginationControls from '@/components/ui/pagination';
 import { applySort, createSortHandler } from '@/components/functions/SortingFunc';
+import { paginateData, getPageCount } from '@/components/functions/paginationfunc';
 import apiClient from '@/lib/apiClient';
 import Button from '@components/ui/Button';
 
@@ -40,12 +42,12 @@ export default function CrudPageLayout({
     pageSize = 0,
 }) {
     // ── Data ──────────────────────────────────────────────────────────────────
-    const [dataList,  setDataList]  = useState([]);
+    const [dataList, setDataList] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
     // ── Modals ────────────────────────────────────────────────────────────────
-    const [isFormOpen,   setIsFormOpen]   = useState(false);
-    const [itemToEdit,   setItemToEdit]   = useState(null);
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [itemToEdit, setItemToEdit] = useState(null);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
 
@@ -84,8 +86,8 @@ export default function CrudPageLayout({
     );
 
     // ── Paginated data ────────────────────────────────────────────────────────
-    const pageCount  = pageSize > 0 ? Math.max(1, Math.ceil(sortedData.length / pageSize)) : 1;
-    const pagedData  = pageSize > 0 ? sortedData.slice((currentPage - 1) * pageSize, currentPage * pageSize) : sortedData;
+    const pageCount = getPageCount(sortedData.length, pageSize);
+    const pagedData = paginateData(sortedData, currentPage, pageSize);
 
     // Reset to page 1 whenever sort or data changes
     useEffect(() => {
@@ -93,8 +95,8 @@ export default function CrudPageLayout({
     }, [sortConfig, dataList, pageSize]);
 
     // ── Action handlers ───────────────────────────────────────────────────────
-    const handleAddClick    = () => { setItemToEdit(null); setIsFormOpen(true); };
-    const handleEditClick   = (item) => { setItemToEdit(item);   setIsFormOpen(true);   };
+    const handleAddClick = () => { setItemToEdit(null); setIsFormOpen(true); };
+    const handleEditClick = (item) => { setItemToEdit(item); setIsFormOpen(true); };
     const handleDeleteClick = (item) => { setItemToDelete(item); setIsDeleteOpen(true); };
 
     const renderActions = (row) => (
@@ -151,44 +153,31 @@ export default function CrudPageLayout({
                 onRowClick={onRowClick}
             />
 
-            {/* ── Sort controls (below table) ── */}
-            {sortEnabled && (
-                <div className="flex items-center justify-end">
-                    <SortControls
-                        sortConfig={sortConfig}
-                        onSort={handleSort}
-                        nameLabel={sortNameLabel ?? (Array.isArray(nameKey) ? 'Name' : 'Name')}
-                        dateLabel={sortDateLabel ?? (dateKey === 'date_joined' ? 'Date Joined' : 'Date Added')}
-                    />
-                </div>
-            )}
+            {/* ── Sort controls + Pagination (side by side) ── */}
+            {(sortEnabled || pageSize > 0) && (
+                <div className="flex items-center justify-between gap-4">
+                    {/* Left: Sort buttons */}
+                    <div>
+                        {sortEnabled && (
+                            <SortControls
+                                sortConfig={sortConfig}
+                                onSort={handleSort}
+                                nameLabel={sortNameLabel ?? (Array.isArray(nameKey) ? 'Name' : 'Name')}
+                                dateLabel={sortDateLabel ?? (dateKey === 'date_joined' ? 'Date Joined' : 'Date Added')}
+                            />
+                        )}
+                    </div>
 
-            {/* ── Pagination ── */}
-            {pageSize > 0 && (
-                <div className="flex items-center justify-end gap-3 text-xs text-gray-500">
-                    <span className="text-gray-400">
-                        {sortedData.length === 0
-                            ? 'No records'
-                            : `Showing ${(currentPage - 1) * pageSize + 1}–${Math.min(currentPage * pageSize, sortedData.length)} of ${sortedData.length}`
-                        }
-                    </span>
-                    <button
-                        type="button"
-                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                        disabled={currentPage <= 1}
-                        className="px-3 py-2 rounded-md border border-gray-200 bg-white text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                    >
-                        Previous
-                    </button>
-                    <span className="font-semibold text-gray-600">{currentPage} / {pageCount}</span>
-                    <button
-                        type="button"
-                        onClick={() => setCurrentPage((p) => Math.min(pageCount, p + 1))}
-                        disabled={currentPage >= pageCount}
-                        className="px-3 py-2 rounded-md border border-gray-200 bg-white text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                    >
-                        Next
-                    </button>
+                    {/* Right: Pagination */}
+                    {pageSize > 0 && (
+                        <PaginationControls
+                            currentPage={currentPage}
+                            pageCount={pageCount}
+                            pageSize={pageSize}
+                            totalItems={sortedData.length}
+                            onPageChange={setCurrentPage}
+                        />
+                    )}
                 </div>
             )}
 

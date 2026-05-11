@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import CrudPageLayout from '@/components/layout/CrudPageLayout'; 
+import CrudPageLayout from '@/components/layout/CrudPageLayout';
 import CrudFormModal from '@/components/layout/CrudFormModal';
 import ExportPDF from '@/components/ui/ExportPDF';
 import FormField from '@/components/ui/FormField';
 import SearchBar from '@components/ui/SearchBar';
 import apiClient from '@/lib/apiClient';
 import { useForm } from '@/hooks/useForm';
-import { branchValidators } from '@/lib/validator'; 
+import { branchValidators } from '@/lib/validator';
 
 // define the Form Modal right here in the same file!
 function BranchModal({ isOpen, onClose, onSuccess, itemToEdit }) {
@@ -35,7 +35,7 @@ function BranchModal({ isOpen, onClose, onSuccess, itemToEdit }) {
     // Reset form when opening or changing items
     useEffect(() => {
         if (isOpen) reset();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [itemToEdit?.branch_no, isOpen]);
 
     // Format data before API submission
@@ -118,11 +118,11 @@ export default function BranchesPage() {
     };
 
     const tableColumns = [
-        { 
+        {
             key: 'branch_no', label: 'Branch No.',
-            render: (val) => <span className="font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">{val}</span> 
+            render: (val) => <span className="font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">{val}</span>
         },
-        { 
+        {
             key: 'address', label: 'Full Address',
             render: (val, row) => (
                 <div className="text-xs text-gray-500">
@@ -133,7 +133,7 @@ export default function BranchesPage() {
             exportValue: (row) => buildBranchAddress(row)
         },
         { key: 'telephone_no', label: 'Contact No.' },
-        { 
+        {
             key: 'manager', label: 'Manager',
             render: (val) => (
                 <span className={`text-sm ${val ? 'text-gray-900 font-medium' : 'text-gray-400 italic'}`}>
@@ -157,6 +157,7 @@ export default function BranchesPage() {
             getDeleteModalItemName={(branch) => `Branch ${branch.branch_no} - ${branch.city}`}
             nameKey="city"
             sortNameLabel="City"
+            pageSize={5}
             renderHeaderMiddle={() => (
                 <SearchBar
                     value={searchQuery}
@@ -180,11 +181,11 @@ export default function BranchesPage() {
             )}
             // Render the local modal component defined above
             renderFormModal={({ isOpen, onClose, onSuccess, itemToEdit }) => (
-                <BranchModal 
-                    isOpen={isOpen} 
-                    onClose={onClose} 
-                    onSuccess={onSuccess} 
-                    itemToEdit={itemToEdit} 
+                <BranchModal
+                    isOpen={isOpen}
+                    onClose={onClose}
+                    onSuccess={onSuccess}
+                    itemToEdit={itemToEdit}
                 />
             )}
         />
