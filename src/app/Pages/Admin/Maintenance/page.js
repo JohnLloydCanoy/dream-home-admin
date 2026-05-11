@@ -269,6 +269,9 @@ export default function MaintenancePage() {
 			searchQuery={searchQuery}
 			searchKeys={['id', 'property_no', 'staff_no', 'inspection_date', 'status', 'comments']}
 			getDeleteModalItemName={(inspection) => `Inspection #${getInspectionId(inspection) || 'N/A'}`}
+		dateKey="inspection_date"
+		sortDateLabel="Inspection Date"
+		pageSize={5}
 			renderHeaderMiddle={() => (
 				<SearchBar
 					value={searchQuery}

@@ -310,6 +310,11 @@ export default function DashboardPage() {
             searchQuery={searchQuery}
             searchKeys={['client_no', 'name', 'registered_branch', 'registered_staff', 'date_registered', 'role']}
             getDeleteModalItemName={(client) => `${client.first_name} ${client.last_name} (${client.role})`}
+            nameKey={['last_name', 'first_name']}
+            dateKey="date_registered"
+            sortNameLabel="Client Name"
+            sortDateLabel="Date Registered"
+            pageSize={5}
             renderHeaderMiddle={() => (
                 <SearchBar
                     value={searchQuery}

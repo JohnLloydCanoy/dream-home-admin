@@ -199,6 +199,11 @@ export default function PaymentsBalancesPage() {
             onRowClick={setSelectedLease} // 👈 Tracks row selection for the banner
             searchQuery={searchQuery}
             searchKeys={['lease_no', 'renter', 'property']}
+            nameKey="lease_no"
+            dateKey="last_payment_date"
+            sortNameLabel="Lease No"
+            sortDateLabel="Last Payment"
+            pageSize={5}
             
             renderHeaderMiddle={() => (
                 <SearchBar

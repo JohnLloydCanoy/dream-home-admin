@@ -5,8 +5,12 @@ import DataTable from '@/components/ui/DataTable';
 import FormField from '@/components/ui/FormField';
 import Button from '@components/ui/Button';
 import StatusUpdateModal from '@/components/ui/StatusUpdateModal';
+import SortControls from '@/components/ui/Sorting';
+import PaginationControls from '@/components/ui/pagination';
 import apiClient from '@/lib/apiClient';
 import { useForm } from '@/hooks/useForm';
+import { applySort, createSortHandler } from '@/components/functions/SortingFunc';
+import { paginateData, getPageCount } from '@/components/functions/paginationfunc';
 
 const normalizeList = (data) => data?.results || data?.items || data || [];
 
@@ -67,6 +71,14 @@ export default function RentalStatusPage() {
 
 	const { formData, handleChange, reset } = useForm({ status_filter: 'all' }, {});
 
+	// ── Sorting ───────────────────────────────────────────────────────────────
+	const [sortConfig, setSortConfig] = useState({ field: null, direction: 'asc' });
+	const handleSort = createSortHandler(setSortConfig);
+
+	// ── Pagination ────────────────────────────────────────────────────────────
+	const PAGE_SIZE = 5;
+	const [currentPage, setCurrentPage] = useState(1);
+
 	const loadProperties = async () => {
 		setIsLoading(true);
 		setLoadError('');
@@ -88,11 +100,20 @@ export default function RentalStatusPage() {
 
 	const filteredProperties = useMemo(() => {
 		const selectedFilter = String(formData.status_filter || 'all').toLowerCase();
-
 		if (selectedFilter === 'all') return properties;
-
 		return properties.filter((property) => String(property.status || '').toLowerCase() === selectedFilter);
 	}, [properties, formData.status_filter]);
+
+	// Apply sort then paginate
+	const sortedProperties = useMemo(
+		() => applySort(filteredProperties, sortConfig, 'property_no', 'date_withdrawn'),
+		[filteredProperties, sortConfig]
+	);
+	const pageCount = getPageCount(sortedProperties.length, PAGE_SIZE);
+	const pagedProperties = paginateData(sortedProperties, currentPage, PAGE_SIZE);
+
+	// Reset page on filter or sort change
+	useMemo(() => setCurrentPage(1), [formData.status_filter, sortConfig]);
 
 	const summary = useMemo(() => {
 		const available = properties.filter((property) => String(property.status || '') === 'Available').length;
@@ -255,13 +276,30 @@ export default function RentalStatusPage() {
 
 			<DataTable
 				columns={tableColumns}
-				data={filteredProperties}
+				data={pagedProperties}
 				keyField="property_no"
 				isLoading={isLoading}
 				emptyMessage="No properties found for the selected status filter."
 				onRowClick={setSelectedProperty}
 				actions={renderActions}
 			/>
+
+			{/* ── Sort + Pagination (side by side) ── */}
+			<div className="flex items-center justify-between gap-4">
+				<SortControls
+					sortConfig={sortConfig}
+					onSort={handleSort}
+					nameLabel="Property ID"
+					dateLabel="Date Withdrawn"
+				/>
+				<PaginationControls
+					currentPage={currentPage}
+					pageCount={pageCount}
+					pageSize={PAGE_SIZE}
+					totalItems={sortedProperties.length}
+					onPageChange={setCurrentPage}
+				/>
+			</div>
 
 			<StatusUpdateModal
 				isOpen={isStatusModalOpen}
