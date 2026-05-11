@@ -13,7 +13,6 @@ import { branchValidators } from '@/lib/validator';
 // define the Form Modal right here in the same file!
 function BranchModal({ isOpen, onClose, onSuccess, itemToEdit }) {
     const [staffList, setStaffList] = useState([]);
-
     // Fetch the manager dropdown options
     useEffect(() => {
         if (isOpen) {
@@ -22,7 +21,6 @@ function BranchModal({ isOpen, onClose, onSuccess, itemToEdit }) {
                 .catch(err => console.error("Failed to load staff:", err));
         }
     }, [isOpen]);
-
     // Initialize Form State
     const { formData, errors, handleChange, validate, reset } = useForm({
         street: itemToEdit?.street || '',
@@ -46,7 +44,6 @@ function BranchModal({ isOpen, onClose, onSuccess, itemToEdit }) {
         if (!data.fax_no) data.fax_no = null;
         return data;
     };
-
     return (
         <CrudFormModal
             isOpen={isOpen}
@@ -179,7 +176,6 @@ export default function BranchesPage() {
                     buttonSize="md"
                 />
             )}
-            
             // Render the local modal component defined above
             renderFormModal={({ isOpen, onClose, onSuccess, itemToEdit }) => (
                 <BranchModal 
