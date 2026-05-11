@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import CrudPageLayout from '@/components/layout/CrudPageLayout'; 
 import CrudFormModal from '@/components/layout/CrudFormModal';
+import ExportPDF from '@/components/ui/ExportPDF';
 import FormField from '@/components/ui/FormField';
 import apiClient from '@/lib/apiClient';
 import { useForm } from '@/hooks/useForm';
@@ -107,6 +108,16 @@ function BranchModal({ isOpen, onClose, onSuccess, itemToEdit }) {
 }
 
 export default function BranchesPage() {
+    const buildBranchAddress = (row) => [row.street, row.area, row.city, row.postcode].filter(Boolean).join(', ');
+    const getManagerName = (manager) => {
+        if (!manager) return 'Unassigned';
+        if (typeof manager === 'object') {
+            const name = [manager.first_name, manager.last_name].filter(Boolean).join(' ');
+            return name || manager.staff_no || 'Unassigned';
+        }
+        return manager;
+    };
+
     const tableColumns = [
         { 
             key: 'branch_no', label: 'Branch No.',
@@ -119,7 +130,8 @@ export default function BranchesPage() {
                     <p className="text-gray-900 font-medium">{row.street}, {row.area}, {row.city}</p>
                     <p>{row.postcode}</p>
                 </div>
-            )
+            ),
+            exportValue: (row) => buildBranchAddress(row)
         },
         { key: 'telephone_no', label: 'Contact No.' },
         { 
@@ -128,7 +140,8 @@ export default function BranchesPage() {
                 <span className={`text-sm ${val ? 'text-gray-900 font-medium' : 'text-gray-400 italic'}`}>
                     {val || "Unassigned"}
                 </span>
-            )
+            ),
+            exportValue: (row) => getManagerName(row.manager)
         },
     ];
 
@@ -141,6 +154,18 @@ export default function BranchesPage() {
             keyField="branch_no"
             columns={tableColumns}
             getDeleteModalItemName={(branch) => `Branch ${branch.branch_no} - ${branch.city}`}
+            renderHeaderActions={(dataList) => (
+                <ExportPDF
+                    title="Branch Operations"
+                    subtitle="DreamHome office locations and contact details."
+                    fileName="branches"
+                    columns={tableColumns}
+                    data={dataList}
+                    buttonLabel="Export PDF"
+                    buttonVariant="secondary"
+                    buttonSize="md"
+                />
+            )}
             
             // Render the local modal component defined above
             renderFormModal={({ isOpen, onClose, onSuccess, itemToEdit }) => (
