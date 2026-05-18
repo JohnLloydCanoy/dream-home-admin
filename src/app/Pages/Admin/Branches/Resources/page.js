@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import DataTable from '@/components/ui/DataTable';
 import Button from '@components/ui/Button';
 import Dialog from '@components/ui/Dialog';
+import ResourceAllocationFormModal from '@/components/ui/ResourceAllocationFormModal';
 
 import apiClient from '@/lib/apiClient';
 import { useUpdate } from '@/hooks/useCrud';
